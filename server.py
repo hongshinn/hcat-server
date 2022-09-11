@@ -161,7 +161,7 @@ class SServer:
                     # 判断是否存在friends_list
                     if 'friends_list' not in self.data_db.get(username):
                         user_data = self.data_db.get(username)
-                        user_data['friends_list'] = []
+                        user_data['friends_list'] = {}
                         self.data_db.set(username, user_data)
                     # 判断是否已经是好友
                     if friend_username in self.data_db.get(username)['friends_list']:
@@ -237,13 +237,14 @@ class SServer:
             if self.data_db.exists(username):
                 # 判断token是否正确
                 if self.data_db.get(username)['token'] == token:
-                    # 判断是否已经是好友
-                    if self.data_db.get(username)['friends_list'].get(friend_username):
-                        return jsonify({'status': 'error', 'message': 'already friend'})
-                    else:
-                        # 获取好友状态
-                        friend_data = self.data_db.get(friend_username)
 
+                    # 判断是否已经是好友
+                    if 'friends_list' in self.data_db.get(friend_username) and username in \
+                            self.data_db.get(friend_username)['friends_list']:
+                        return jsonify({'status': 'error', 'message': 'already friend.'})
+                    else:
+                        # 获取好友数据
+                        friend_data = self.data_db.get(friend_username)
                         # 检测是否存在todo_list
                         if 'todo_list' not in friend_data:
                             friend_data['todo_list'] = []
@@ -338,6 +339,43 @@ class SServer:
                 self.data_db_lock.release()
                 return jsonify({'status': 'null', 'message': 'username not exists'})
 
+        # 获取好友列表
+        # POST /friend/get_friends_list/
+        #  username: string
+        #  token: string
+        # return:
+        #  status: string (ok/error/null)
+        #  message: string
+        #  data: dict
+        @self.app.route('/friend/get_friends_list/', methods=['POST'])
+        def get_friend_list():
+            # 判断请求体是否为空
+            if 'username' not in request.form or 'token' not in request.form:
+                return jsonify({'status': 'error', 'message': 'username or token is missing'})
+
+            # 获取请求参数
+            username = request.form['username']
+            token = request.form['token']
+
+            # 判断用户名是否存在
+
+            if self.data_db.exists(username):
+                # 判断token是否正确
+                if self.data_db.get(username)['token'] == token:
+                    # 取用户数据
+                    user_data = self.data_db.get(username)
+                    # 判断并返回好友列表
+                    if 'friends_list' in user_data:
+                        return jsonify({'status': 'ok', 'data': user_data['friends_list']})
+                    else:
+                        return jsonify({'status': 'ok', 'data': {}})
+                else:
+
+                    return jsonify({'status': 'error', 'message': 'token error'})
+            else:
+
+                return jsonify({'status': 'null', 'message': 'username not exists'})
+
         # 获取todolist
         # POST /auth/get_todo_list/
         #  username: string
@@ -375,10 +413,11 @@ class SServer:
                 return jsonify({'status': 'null', 'message': 'username not exists'})
 
     def start(self):
-        threading.Thread(target=self._event_log_clear_thread)
+        threading.Thread(target=self._event_log_clear_thread).start()
         self.app.run(host=self.address[0], port=self.address[1])
 
     def _event_log_clear_thread(self):
+
         while True:
             i = 0
             self.event_log_db_lock.acquire()
@@ -388,5 +427,6 @@ class SServer:
                     i += 1
                     self.event_log_db.rem(i)
             self.event_log_db_lock.release()
-            print('Cleaned up {} expired events.'.format(i))
+            if i > 0:
+                print('Cleaned up {} expired events.'.format(i))
             time.sleep(30)
