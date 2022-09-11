@@ -1,3 +1,4 @@
+import hashlib
 import re
 import threading
 import time
@@ -49,7 +50,7 @@ class HCatServer:
                 return jsonify({'status': 'error', 'message': 'username is not exist'})
 
             # 判断用户名和密码是否正确
-            if self.auth_db.get(username)['password'] == password:
+            if self.auth_db.get(username)['password'] == hashlib.sha1((password + '1145').encode('utf8')).hexdigest():
 
                 # 生成随机密钥
                 token = get_random_token()
@@ -96,7 +97,9 @@ class HCatServer:
                 return jsonify({'status': 'error', 'message': 'username already exists'})
             else:
                 # 写入数据库
-                self.auth_db.set(username, {'password': password, 'display_name': display_name})
+
+                self.auth_db.set(username, {'password': hashlib.sha1((password + '1145').encode('utf8')).hexdigest(),
+                                            'display_name': display_name})
                 return jsonify({'status': 'ok', 'message': 'register success'})
 
         # 获取显示名称
