@@ -1,12 +1,11 @@
-import hashlib
 import re
 import threading
 import time
 
-from flask import Flask, request, jsonify
 import pickledb
+from flask import Flask, request, jsonify
 
-from util import get_random_token
+from util import *
 
 
 class HCatServer:
@@ -50,7 +49,8 @@ class HCatServer:
                 return jsonify({'status': 'error', 'message': 'username is not exist'})
 
             # 判断用户名和密码是否正确
-            if self.auth_db.get(username)['password'] == hashlib.sha1((password + '1145').encode('utf8')).hexdigest():
+            if self.auth_db.get(username)['password'] == salted_hash(password, self.auth_db.get(username)['salt'],
+                                                                     username):
 
                 # 生成随机密钥
                 token = get_random_token()
@@ -97,8 +97,10 @@ class HCatServer:
                 return jsonify({'status': 'error', 'message': 'username already exists'})
             else:
                 # 写入数据库
+                salt = get_random_token(16)
 
-                self.auth_db.set(username, {'password': hashlib.sha1((password + '1145').encode('utf8')).hexdigest(),
+                self.auth_db.set(username, {'password': salted_hash(password, salt, username),
+                                            'salt': salt,
                                             'display_name': display_name})
                 return jsonify({'status': 'ok', 'message': 'register success'})
 
@@ -157,52 +159,50 @@ class HCatServer:
             if not self.data_db.exists(friend_username):
                 return jsonify({'status': 'null', 'message': 'friend not exists'})
 
-            # 判断用户名是否存在
-            if self.data_db.exists(username):
-                # 判断token是否正确
-                if self.data_db.get(username)['token'] == token:
-                    # 判断是否存在friends_list
-                    if 'friends_list' not in self.data_db.get(username):
-                        user_data = self.data_db.get(username)
-                        user_data['friends_list'] = {}
-                        self.data_db.set(username, user_data)
-                    # 判断是否已经是好友
-                    if friend_username in self.data_db.get(username)['friends_list']:
-                        return jsonify({'status': 'error', 'message': 'already friend'})
-                    else:
-                        # 添加好友
-                        friend_data = self.data_db.get(friend_username)
-
-                        # 检测是否存在todo_list
-                        if 'todo_list' not in friend_data:
-                            friend_data['todo_list'] = []
-
-                        # 将申请加入朋友的todo_list
-                        rid = get_random_token(8)
-                        while self.event_log_db.exists(rid):
-                            rid = get_random_token(8)
-                        # 加锁
-                        self.event_log_db_lock.acquire()
-                        self.event_log_db. \
-                            set(rid,
-                                {'type': 'friend_request',
-                                 'username': username,
-                                 'time': time.time()}
-                                )
-                        # 解锁
-                        self.event_log_db_lock.release()
-                        friend_data['todo_list'].append(
-                            {'type': 'friend_request',
-                             'rid': rid,
-                             'username': username,
-                             'additional_information': additional_information,
-                             'time': time.time()})
-                        self.data_db.set(friend_username, friend_data)
-                        return jsonify({'status': 'ok', 'message': 'add friend success'})
+            # 验证用户名与token
+            auth_status, msg = self.authenticate_token(username, token)
+            if auth_status:
+                # 判断是否存在friends_list
+                if 'friends_list' not in self.data_db.get(username):
+                    user_data = self.data_db.get(username)
+                    user_data['friends_list'] = {}
+                    self.data_db.set(username, user_data)
+                # 判断是否已经是好友
+                if friend_username in self.data_db.get(username)['friends_list']:
+                    return jsonify({'status': 'error', 'message': 'already friend'})
                 else:
-                    return jsonify({'status': 'error', 'message': 'token error'})
+                    # 添加好友
+                    friend_data = self.data_db.get(friend_username)
+
+                    # 检测是否存在todo_list
+                    if 'todo_list' not in friend_data:
+                        friend_data['todo_list'] = []
+
+                    # 将申请加入朋友的todo_list
+                    rid = get_random_token(8)
+                    while self.event_log_db.exists(rid):
+                        rid = get_random_token(8)
+                    # 加锁
+                    self.event_log_db_lock.acquire()
+                    self.event_log_db. \
+                        set(rid,
+                            {'type': 'friend_request',
+                             'username': username,
+                             'time': time.time()}
+                            )
+                    # 解锁
+                    self.event_log_db_lock.release()
+                    friend_data['todo_list'].append(
+                        {'type': 'friend_request',
+                         'rid': rid,
+                         'username': username,
+                         'additional_information': additional_information,
+                         'time': time.time()})
+                    self.data_db.set(friend_username, friend_data)
+                    return jsonify({'status': 'ok', 'message': 'add friend success'})
+
             else:
-                return jsonify({'status': 'null', 'message': 'username not exists'})
+                return msg
 
         # 同意好友申请
         # POST /friend/agree/
@@ -236,59 +236,55 @@ class HCatServer:
                 return jsonify({'status': 'null', 'message': 'friend not exists'})
 
             self.data_db_lock.acquire()
-            # 判断用户名是否存在
-            if self.data_db.exists(username):
-                # 判断token是否正确
-                if self.data_db.get(username)['token'] == token:
+            # 验证用户名与token
+            auth_status, msg = self.authenticate_token(username, token)
+            if auth_status:
 
-                    # 判断是否已经是好友
-                    if 'friends_list' in self.data_db.get(friend_username) and username in \
-                            self.data_db.get(friend_username)['friends_list']:
-                        return jsonify({'status': 'error', 'message': 'already friend.'})
-                    else:
-                        # 获取好友数据
-                        friend_data = self.data_db.get(friend_username)
-                        # 检测是否存在todo_list
-                        if 'todo_list' not in friend_data:
-                            friend_data['todo_list'] = []
-
-                        # 将同意申请加入朋友的todo_list
-                        friend_data['todo_list'].append(
-                            {'type': 'friend_agree',
-                             'rid': get_random_token(8),
-                             'username': username,
-                             'time': time.time()})
-
-                        # 检测是否存在朋友列表
-                        if 'friends_list' not in friend_data:
-                            friend_data['friends_list'] = {}
-
-                        # 加入朋友列表
-                        display_name = self.auth_db.get(username)['display_name']
-                        friend_data['friends_list'][username] = {'nick': display_name,
-                                                                 'time': time.time()}
-
-                        # 获取用户状态
-                        user_data = self.data_db.get(username)
-
-                        # 检测是否存在朋友列表
-                        if 'friends_list' not in user_data:
-                            user_data['friends_list'] = {}
-
-                        # 加入朋友列表
-                        friend_display_name = self.auth_db.get(friend_username)['display_name']
-                        user_data['friends_list'][friend_username] = {'nick': friend_display_name,
-                                                                      'time': time.time()}
-                        self.data_db.set(friend_username, friend_data)
-                        self.data_db.set(username, user_data)
-                        self.data_db_lock.release()
-                        return jsonify({'status': 'ok', 'message': 'agree friend success'})
+                # 判断是否已经是好友
+                if 'friends_list' in self.data_db.get(friend_username) and username in \
+                        self.data_db.get(friend_username)['friends_list']:
+                    return jsonify({'status': 'error', 'message': 'already friend.'})
                 else:
+                    # 获取好友数据
+                    friend_data = self.data_db.get(friend_username)
+                    # 检测是否存在todo_list
+                    if 'todo_list' not in friend_data:
+                        friend_data['todo_list'] = []
+
+                    # 将同意申请加入朋友的todo_list
+                    friend_data['todo_list'].append(
+                        {'type': 'friend_agree',
+                         'rid': get_random_token(8),
+                         'username': username,
+                         'time': time.time()})
+
+                    # 检测是否存在朋友列表
+                    if 'friends_list' not in friend_data:
+                        friend_data['friends_list'] = {}
+
+                    # 加入朋友列表
+                    display_name = self.auth_db.get(username)['display_name']
+                    friend_data['friends_list'][username] = {'nick': display_name,
+                                                             'time': time.time()}
+
+                    # 获取用户状态
+                    user_data = self.data_db.get(username)
+
+                    # 检测是否存在朋友列表
+                    if 'friends_list' not in user_data:
+                        user_data['friends_list'] = {}
+
+                    # 加入朋友列表
+                    friend_display_name = self.auth_db.get(friend_username)['display_name']
+                    user_data['friends_list'][friend_username] = {'nick': friend_display_name,
+                                                                  'time': time.time()}
+                    self.data_db.set(friend_username, friend_data)
+                    self.data_db.set(username, user_data)
                     self.data_db_lock.release()
-                    return jsonify({'status': 'error', 'message': 'token error'})
+                    return jsonify({'status': 'ok', 'message': 'agree friend success'})
             else:
                 self.data_db_lock.release()
-                return jsonify({'status': 'null', 'message': 'username not exists'})
+                return msg
 
         # 删除好友
         # POST /friend/delete/
@@ -310,37 +306,36 @@ class HCatServer:
             friend_username = request.form['friend_username']
             # 判断用户名是否存在
             self.data_db_lock.acquire()
-            if self.data_db.exists(username):
-                if self.data_db.get(username)['token'] == token:
-                    friend_data = self.data_db.get(friend_username)
+            # 验证用户名与token
+            auth_status, msg = self.authenticate_token(username, token)
+            if auth_status:
+                friend_data = self.data_db.get(friend_username)
 
-                    # 检测是否存在todo_list
-                    if 'todo_list' not in friend_data:
-                        friend_data['todo_list'] = []
+                # 检测是否存在todo_list
+                if 'todo_list' not in friend_data:
+                    friend_data['todo_list'] = []
 
-                    # 将好友删除事件加入朋友的todo_list
-                    friend_data['todo_list'].append(
-                        {'type': 'friend_deleted',
-                         'rid': get_random_token(8),
-                         'username': username,
-                         'time': time.time()})
+                # 将好友删除事件加入朋友的todo_list
+                friend_data['todo_list'].append(
+                    {'type': 'friend_deleted',
+                     'rid': get_random_token(8),
+                     'username': username,
+                     'time': time.time()})
 
-                    # 从好友的好友列表删除
-                    del friend_data['friends_list'][username]
-                    self.data_db.set(friend_username, friend_data)
+                # 从好友的好友列表删除
+                del friend_data['friends_list'][username]
+                self.data_db.set(friend_username, friend_data)
 
-                    # 从好友列表删除
-                    user_data = self.data_db.get(username)
-                    del user_data['friends_list'][friend_username]
-                    self.data_db.set(username, user_data)
-                    self.data_db_lock.release()
-                    return jsonify({'status': 'ok'})
-                else:
-                    self.data_db_lock.release()
-                    return jsonify({'status': 'error', 'message': 'token error'})
+                # 从好友列表删除
+                user_data = self.data_db.get(username)
+                del user_data['friends_list'][friend_username]
+                self.data_db.set(username, user_data)
+                self.data_db_lock.release()
+                return jsonify({'status': 'ok'})
+
             else:
                 self.data_db_lock.release()
-                return jsonify({'status': 'null', 'message': 'username not exists'})
+                return msg
 
         # 获取好友列表
         # POST /friend/get_friends_list/
@@ -360,24 +355,19 @@ class HCatServer:
             username = request.form['username']
             token = request.form['token']
 
-            # 判断用户名是否存在
-
-            if self.data_db.exists(username):
-                # 判断token是否正确
-                if self.data_db.get(username)['token'] == token:
-                    # 取用户数据
-                    user_data = self.data_db.get(username)
-                    # 判断并返回好友列表
-                    if 'friends_list' in user_data:
-                        return jsonify({'status': 'ok', 'data': user_data['friends_list']})
-                    else:
-                        return jsonify({'status': 'ok', 'data': {}})
+            # 验证用户名与token
+            auth_status, msg = self.authenticate_token(username, token)
+            if auth_status:
+                # 取用户数据
+                user_data = self.data_db.get(username)
+                # 判断并返回好友列表
+                if 'friends_list' in user_data:
+                    return jsonify({'status': 'ok', 'data': user_data['friends_list']})
                 else:
+                    return jsonify({'status': 'ok', 'data': {}})
 
-                    return jsonify({'status': 'error', 'message': 'token error'})
             else:
-
-                return jsonify({'status': 'null', 'message': 'username not exists'})
+                return msg
 
         # 获取todolist
         # POST /auth/get_todo_list/
@@ -397,23 +387,35 @@ class HCatServer:
             username = request.form['username']
             token = request.form['token']
 
-            # 判断用户名是否存在
-            if self.data_db.exists(username):
-                # 判断token是否正确
-                if self.data_db.get(username)['token'] == token:
-                    data = self.data_db.get(username)
-                    # 取得结果
-                    res = data['todo_list']
-                    # 清空todo_list
-                    data['todo_list'] = []
-                    # 计入数据库
-                    self.data_db.set(username, data)
-                    return jsonify({'status': 'ok', 'data': res})
+            # 验证用户名与token
+            auth_status, msg = self.authenticate_token(username, token)
+            if auth_status:
+                data = self.data_db.get(username)
+                # 取得结果
+                res = data['todo_list']
+                # 清空todo_list
+                data['todo_list'] = []
+                # 计入数据库
+                self.data_db.set(username, data)
+                return jsonify({'status': 'ok', 'data': res})
 
-                else:
-                    return jsonify({'status': 'error', 'message': 'token error'})
             else:
-                return jsonify({'status': 'null', 'message': 'username not exists'})
+                return msg
+
+        # 发送好友信息
+        # POST /chat/friend/send_msg/
+        #  username: string
+        #  token: string
+        #  friend_username: string
+        #  msg: dict
+        # return:
+        #  status: string
+        #  message: string
+        '''
+        @app.route('/chat/friend/send_msg/', method=['POST'])
+        def send_friend_msg():
+            pass
+        '''
 
     def start(self):
         threading.Thread(target=self._event_log_clear_thread).start()
@@ -433,3 +435,12 @@ class HCatServer:
             if i > 0:
                 print('Cleaned up {} expired events.'.format(i))
             time.sleep(30)
+
+    def authenticate_token(self, username, token):
+        if self.data_db.exists(username):
+            if self.data_db.get(username)['token'] == token:
+                return True, None
+            else:
+                return False, jsonify({'status': 'error', 'message': 'token error'})
+        else:
+            return False, jsonify({'status': 'null', 'message': 'username not exists'})
