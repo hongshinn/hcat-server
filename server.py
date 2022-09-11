@@ -8,7 +8,7 @@ import pickledb
 from util import get_random_token
 
 
-class SServer:
+class HCatServer:
     def __init__(self, address):
         # 初始化Flask对象
         app = Flask(__name__)

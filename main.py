@@ -1,3 +1,3 @@
-from server import SServer
+from server import HCatServer
 
-SServer(('0.0.0.0', 8080)).start()
+HCatServer(('0.0.0.0', 8080)).start()
