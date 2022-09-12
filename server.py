@@ -424,11 +424,50 @@ class HCatServer:
         # return:
         #  status: string
         #  message: string
-        '''
-        @app.route('/chat/friend/send_msg/', method=['POST'])
+        @app.route('/chat/friend/send_msg/', methods=['POST'])
         def send_friend_msg():
-            pass
-        '''
+            # 判断请求体是否为空
+            if 'username' not in request.form \
+                    or 'token' not in request.form \
+                    or 'friend_username' not in request.form \
+                    or 'msg' not in request.form:
+                return jsonify({'status': 'error', 'message': 'username token friend_username or msg is missing'})
+
+            # 获取请求参数
+            username = request.form['username']
+            token = request.form['token']
+            friend_username = request.form['friend_username']
+            msg = request.form['msg']
+            data = self.data_db.get(username)
+            # 判断是否为空
+            if 'friends_list' not in data or friend_username not in data['friends_list']:
+                return jsonify({'status': 'null', 'message': 'friends not exists.'})
+
+            self.data_db_lock.acquire()
+            # 验证用户名与token
+            auth_status, rt_msg = self.authenticate_token(username, token)
+            if auth_status:
+                friend_data = self.data_db.get(friend_username)
+                # 判断是否为空
+                if 'todo_list' not in friend_data:
+                    friend_data['todo_list'] = []
+
+                # 清空todo_list
+                friend_data['todo_list'].append(
+                    {'type': 'friend_msg',
+                     'rid': get_random_token(8),
+                     'username': username,
+                     'msg': msg,
+                     'time': time.time()})
+
+                # 计入数据库
+                self.data_db.set(friend_username, friend_data)
+                self.data_db_lock.release()
+                return jsonify({'status': 'ok'})
+
+            else:
+                self.data_db_lock.release()
+                return rt_msg
 
     def start(self):
         threading.Thread(target=self._event_log_clear_thread).start()
