@@ -25,6 +25,10 @@ class HCatServer:
         self.data_db_lock = threading.Lock()
         self.event_log_db_lock = threading.Lock()
 
+        @self.app.route('/', methods=['GET'])
+        def main_page():
+            return 'hcat'
+
         # 注册路由
         # 注册登录路由
         # POST /auth/login
