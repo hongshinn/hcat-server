@@ -321,15 +321,25 @@ class HCatServer:
                      'rid': get_random_token(8),
                      'username': username,
                      'time': time.time()})
-
-                # 从好友的好友列表删除
-                del friend_data['friends_list'][username]
-                self.data_db.set(friend_username, friend_data)
+                if 'friends_list' in friend_data:
+                    # 从好友的好友列表删除
+                    del friend_data['friends_list'][username]
+                    self.data_db.set(friend_username, friend_data)
+                else:
+                    friend_data['friends_list'] = {}
+                    self.data_db.set(friend_username, friend_data)
 
                 # 从好友列表删除
+
                 user_data = self.data_db.get(username)
-                del user_data['friends_list'][friend_username]
-                self.data_db.set(username, user_data)
+                if 'friends_list' in user_data:
+                    # 从好友的好友列表删除
+                    del user_data['friends_list'][friend_username]
+                    self.data_db.set(username, user_data)
+                else:
+                    user_data['friends_list'] = {}
+                    self.data_db.set(username, user_data)
+
                 self.data_db_lock.release()
                 return jsonify({'status': 'ok'})
 
@@ -391,8 +401,11 @@ class HCatServer:
             auth_status, msg = self.authenticate_token(username, token)
             if auth_status:
                 data = self.data_db.get(username)
-                # 取得结果
-                res = data['todo_list']
+                if 'todo_list' in data:
+                    # 取得结果
+                    res = data['todo_list']
+                else:
+                    res = []
                 # 清空todo_list
                 data['todo_list'] = []
                 # 计入数据库
