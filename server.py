@@ -24,7 +24,9 @@ class HCatServer:
         # 创建锁
         self.data_db_lock = threading.Lock()
         self.event_log_db_lock = threading.Lock()
+        self._route_init()
 
+    def _route_init(self):
         @self.app.route('/', methods=['GET'])
         def main_page():
             return 'hcat'
