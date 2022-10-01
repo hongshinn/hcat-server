@@ -4,6 +4,7 @@ import time
 
 import pickledb
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 import util
 from util import *
@@ -13,6 +14,7 @@ class HCatServer:
     def __init__(self, address):
         # 初始化Flask对象
         app = Flask(__name__)
+        CORS(app)
         self.app = app
         # 初始化变量
         self.address = address
