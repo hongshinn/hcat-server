@@ -12,3 +12,16 @@ def salted_hash(data, salt, additional_string=None):
     if additional_string is not None:
         hash_salt += hashlib.sha1(additional_string.encode('utf8')).hexdigest()
     return hashlib.sha1((data + '1145').encode('utf8')).hexdigest()
+
+
+def request_parse(req_data):
+    if req_data.method == 'POST':
+        data = req_data.form
+    elif req_data.method == 'GET':
+        data_dict = {}
+        for i in req_data.args.items():
+            data_dict[i[0]] = i[1]
+        data = data_dict
+    else:
+        data = {}
+    return data

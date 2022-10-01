@@ -5,6 +5,7 @@ import time
 import pickledb
 from flask import Flask, request, jsonify
 
+import util
 from util import *
 
 
@@ -24,31 +25,31 @@ class HCatServer:
         # 创建锁
         self.data_db_lock = threading.Lock()
         self.event_log_db_lock = threading.Lock()
-        self._route_init()
 
-    def _route_init(self):
         @self.app.route('/', methods=['GET'])
         def main_page():
             return 'hcat'
 
         # 注册路由
         # 注册登录路由
-        # POST /auth/login
+        # POST/GET /auth/login
         #  username: string
         #  password: string
         # return:
         #  status: string
         #  token: string
         #  message: string
-        @self.app.route('/auth/login', methods=['POST'])
+        @self.app.route('/auth/login', methods=['GET', 'POST'])
         def login():
+            req_data = util.request_parse(request)
+
             # 判断请求体是否为空
-            if 'username' not in request.form or 'password' not in request.form:
+            if 'username' not in req_data or 'password' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username or password is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            password = request.form['password']
+            username = req_data['username']
+            password = req_data['password']
 
             # 判断用户名是否存在
             if username not in self.auth_db.getall():
@@ -70,23 +71,24 @@ class HCatServer:
                 return jsonify({'status': 'error', 'message': 'username or password is incorrect'})
 
         # 注册注册路由
-        # POST /auth/register
+        # POST/GET /auth/register
         #  username: string
         #  password: string
         #  display_name: string
         # return:
         #  status: string
         #  message: string
-        @self.app.route('/auth/register', methods=['POST'])
+        @self.app.route('/auth/register', methods=['POST', 'GET'])
         def register():
+            req_data = util.request_parse(request)
             # 判断请求体是否为空
-            if 'username' not in request.form or 'password' not in request.form or 'display_name' not in request.form:
+            if 'username' not in req_data or 'password' not in req_data or 'display_name' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username password or display_name is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            password = request.form['password']
-            display_name = request.form['display_name']
+            username = req_data['username']
+            password = req_data['password']
+            display_name = req_data['display_name']
 
             # 判断用户名是否符合要求
             reg = r'^[a-zA-Z][a-zA-Z0-9_]{4,15}$'
@@ -138,7 +140,7 @@ class HCatServer:
                 return jsonify({'status': 'null', 'message': 'username not exists'})
 
         # 添加好友
-        # POST /friend/add/
+        # POST/GET /friend/add/
         #  username: string
         #  token: string
         #  friend_username: string
@@ -146,18 +148,19 @@ class HCatServer:
         # return:
         #  status: string (ok/error/null)
         #  message: string
-        @self.app.route('/friend/add/', methods=['POST'])
+        @self.app.route('/friend/add/', methods=['POST', 'GET'])
         def add_friend():
+            req_data = util.request_parse(request)
             # 判断请求体是否为空
-            if 'username' not in request.form or 'token' not in request.form or 'friend_username' not in request.form:
+            if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username or token or friend_username is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            token = request.form['token']
-            friend_username = request.form['friend_username']
-            if 'additional_information' in request.form:
-                additional_information = request.form['additional_information']
+            username = req_data['username']
+            token = req_data['token']
+            friend_username = req_data['friend_username']
+            if 'additional_information' in req_data:
+                additional_information = req_data['additional_information']
             else:
                 additional_information = ''
 
@@ -211,23 +214,24 @@ class HCatServer:
                 return msg
 
         # 同意好友申请
-        # POST /friend/agree/
+        # POST/GET /friend/agree/
         #  username: string
         #  token: string
         #  rid: string
         # return:
         #  status: string (ok/error/null)
         #  message: string
-        @self.app.route('/friend/agree/', methods=['POST'])
+        @self.app.route('/friend/agree/', methods=['POST', 'GET'])
         def agree_friend():
+            req_data = util.request_parse(request)
             # 判断请求体是否为空
-            if 'username' not in request.form or 'token' not in request.form or 'rid' not in request.form:
+            if 'username' not in req_data or 'token' not in req_data or 'rid' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username or token or rid is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            token = request.form['token']
-            rid = request.form['rid']
+            username = req_data['username']
+            token = req_data['token']
+            rid = req_data['rid']
 
             if self.event_log_db.exists(rid):
                 friend_username = self.event_log_db.get(rid)['username']
@@ -293,23 +297,24 @@ class HCatServer:
                 return msg
 
         # 删除好友
-        # POST /friend/delete/
+        # POST/GET /friend/delete/
         #  username: string
         #  token: string
         #  friend_username: string
         # return:
         #  status: string (ok/error/null)
         #  message: string
-        @self.app.route('/friend/delete/', methods=['POST'])
+        @self.app.route('/friend/delete/', methods=['POST', 'GET'])
         def delete_friend():
+            req_data = util.request_parse(request)
             # 判断请求体是否为空
-            if 'username' not in request.form or 'token' not in request.form or 'friend_username' not in request.form:
+            if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username or token or friend_username is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            token = request.form['token']
-            friend_username = request.form['friend_username']
+            username = req_data['username']
+            token = req_data['token']
+            friend_username = req_data['friend_username']
             # 判断用户名是否存在
             self.data_db_lock.acquire()
             # 验证用户名与token
@@ -354,22 +359,23 @@ class HCatServer:
                 return msg
 
         # 获取好友列表
-        # POST /friend/get_friends_list/
+        # POST/GET /friend/get_friends_list/
         #  username: string
         #  token: string
         # return:
         #  status: string (ok/error/null)
         #  message: string
         #  data: dict
-        @self.app.route('/friend/get_friends_list/', methods=['POST'])
+        @self.app.route('/friend/get_friends_list/', methods=['POST', 'GET'])
         def get_friend_list():
+            req_data = util.request_parse(request)
             # 判断请求体是否为空
-            if 'username' not in request.form or 'token' not in request.form:
+            if 'username' not in req_data or 'token' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username or token is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            token = request.form['token']
+            username = req_data['username']
+            token = req_data['token']
 
             # 验证用户名与token
             auth_status, msg = self.authenticate_token(username, token)
@@ -386,22 +392,23 @@ class HCatServer:
                 return msg
 
         # 获取todolist
-        # POST /auth/get_todo_list/
+        # POST/GET /auth/get_todo_list/
         #  username: string
         #  token: string
         # return:
         #  status: string (ok/error/null)
         #  message: string
         #  data: list<string>
-        @self.app.route('/auth/get_todo_list/', methods=['POST'])
+        @self.app.route('/auth/get_todo_list/', methods=['POST', 'GET'])
         def get_todo_list():
+            req_data = util.request_parse(request)
             # 判断请求体是否为空
-            if 'username' not in request.form or 'token' not in request.form:
+            if 'username' not in req_data or 'token' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username or token is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            token = request.form['token']
+            username = req_data['username']
+            token = req_data['token']
 
             # 验证用户名与token
             auth_status, msg = self.authenticate_token(username, token)
@@ -422,7 +429,7 @@ class HCatServer:
                 return msg
 
         # 发送好友信息
-        # POST /chat/friend/send_msg/
+        # POST/GET /chat/friend/send_msg/
         #  username: string
         #  token: string
         #  friend_username: string
@@ -430,20 +437,21 @@ class HCatServer:
         # return:
         #  status: string
         #  message: string
-        @app.route('/chat/friend/send_msg/', methods=['POST'])
+        @app.route('/chat/friend/send_msg/', methods=['POST', 'GET'])
         def send_friend_msg():
+            req_data = util.request_parse(request)
             # 判断请求体是否为空
-            if 'username' not in request.form \
-                    or 'token' not in request.form \
-                    or 'friend_username' not in request.form \
-                    or 'msg' not in request.form:
+            if 'username' not in req_data \
+                    or 'token' not in req_data \
+                    or 'friend_username' not in req_data \
+                    or 'msg' not in req_data:
                 return jsonify({'status': 'error', 'message': 'username token friend_username or msg is missing'})
 
             # 获取请求参数
-            username = request.form['username']
-            token = request.form['token']
-            friend_username = request.form['friend_username']
-            msg = request.form['msg']
+            username = req_data['username']
+            token = req_data['token']
+            friend_username = req_data['friend_username']
+            msg = req_data['msg']
             data = self.data_db.get(username)
             # 判断是否为空
             if 'friends_list' not in data or friend_username not in data['friends_list']:
