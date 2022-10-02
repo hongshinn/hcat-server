@@ -33,7 +33,6 @@ class HCatServer:
         def main_page():
             return 'hcat'
 
-        # 注册路由
         # 注册登录路由
         # POST/GET /auth/login
         #  username: string
@@ -56,7 +55,7 @@ class HCatServer:
 
             # 判断用户名是否存在
             if username not in self.auth_db.getall():
-                return jsonify({'status': 'error', 'message': 'username is not exist'})
+                return jsonify({'status': 'null', 'message': 'username is not exist'})
 
             # 判断用户名和密码是否正确
             if self.auth_db.get(username)['password'] == salted_hash(password, self.auth_db.get(username)['salt'],
@@ -66,7 +65,12 @@ class HCatServer:
                 token = get_random_token()
 
                 # 写入数据库
-                self.data_db.set(username, {'status': 'online', 'token': token})
+                self.data_db_lock.acquire()
+                userdata = self.data_db.get(username)
+                userdata['status'] = 'online'
+                userdata['token'] = token
+                self.data_db.set(username, userdata)
+                self.data_db_lock.release()
 
                 # 返回结果
                 return jsonify({'status': 'ok', 'token': token, 'message': 'login success'})
