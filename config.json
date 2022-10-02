@@ -1,0 +1,6 @@
+{
+  "IP": "0.0.0.0",
+  "Port": 8080,
+  "GCTime": 30,
+  "MainPageContent": "<meta http-equiv=\"refresh\" content=\"0;url=https://github.com/hongshinn/hcat-server\" >"
+}

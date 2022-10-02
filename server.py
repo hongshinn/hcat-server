@@ -12,13 +12,14 @@ from util import *
 
 
 class HCatServer:
-    def __init__(self, address):
+    def __init__(self, address, gc_time, main_page_content):
         # 初始化Flask对象
         app = Flask(__name__)
         CORS(app)
         self.app = app
         # 初始化变量
         self.address = address
+        self.gc_time = gc_time
 
         # 创建数据库对象
         self.auth_db = pickledb.load('auth.db', True)
@@ -31,7 +32,7 @@ class HCatServer:
 
         @self.app.route('/', methods=['GET'])
         def main_page():
-            return 'hcat'
+            return main_page_content
 
         # 注册路由
         # 注册登出路由
@@ -548,7 +549,7 @@ class HCatServer:
             self.event_log_db_lock.release()
             if i > 0:
                 print('Cleaned up {} expired events.'.format(i))
-            time.sleep(30)
+            time.sleep(self.gc_time)
 
     def authenticate_token(self, username, token):
         if self.data_db.exists(username):

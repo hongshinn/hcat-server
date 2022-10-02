@@ -1,3 +1,5 @@
+from config_loader import Config
 from server import HCatServer
 
-HCatServer(('0.0.0.0', 8080)).start()
+config = Config()
+HCatServer((config.IP, config.Port), config.GCTime, config.MainPageContent).start()
