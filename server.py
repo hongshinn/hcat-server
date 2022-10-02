@@ -72,7 +72,7 @@ class HCatServer:
             if auth_status:
                 # 写入数据库
                 self.data_db_lock.acquire()
-                userdata = self.data_db.get(username)
+                userdata = util.get_user_data(self.data_db, username)
                 userdata['status'] = 'offline'
                 userdata['token'] = ''
                 self.data_db.set(username, userdata)
@@ -127,9 +127,14 @@ class HCatServer:
 
                 # 写入数据库
                 self.data_db_lock.acquire()
-                userdata = self.data_db.get(username)
+
+                # 读取数据
+                userdata = util.get_user_data(self.data_db, username)
+
+                # 写入字典
                 userdata['status'] = 'online'
                 userdata['token'] = token
+                # 写出
                 self.data_db.set(username, userdata)
                 self.data_db_lock.release()
 
@@ -229,7 +234,7 @@ class HCatServer:
             """
             # 判断用户名是否存在
             if self.data_db.exists(username):
-                return jsonify({'status': self.data_db.get(username)['status']})
+                return jsonify({'status': util.get_user_data(self.data_db, username)['status']})
             else:
                 return jsonify({'status': 'null', 'message': 'username not exists'})
 
@@ -279,12 +284,12 @@ class HCatServer:
             auth_status, msg = self.authenticate_token(username, token)
             if auth_status:
                 # 判断是否存在friends_list
-                if 'friends_list' not in self.data_db.get(username):
-                    user_data = self.data_db.get(username)
+                if 'friends_list' not in util.get_user_data(self.data_db, username):
+                    user_data = util.get_user_data(self.data_db, username)
                     user_data['friends_list'] = {}
                     self.data_db.set(username, user_data)
                 # 判断是否已经是好友
-                if friend_username in self.data_db.get(username)['friends_list']:
+                if friend_username in util.get_user_data(self.data_db, username)['friends_list']:
                     return jsonify({'status': 'error', 'message': 'already friend'})
                 else:
                     # 添加好友
@@ -395,7 +400,7 @@ class HCatServer:
                                                              'time': time.time()}
 
                     # 获取用户状态
-                    user_data = self.data_db.get(username)
+                    user_data = util.get_user_data(self.data_db, username)
 
                     # 检测是否存在朋友列表
                     if 'friends_list' not in user_data:
@@ -469,14 +474,14 @@ class HCatServer:
 
                 # 从好友列表删除
 
-                user_data = self.data_db.get(username)
+                user_data = util.get_user_data(self.data_db, username)
                 if 'friends_list' in user_data:
                     # 从好友的好友列表删除
                     del user_data['friends_list'][friend_username]
-                    self.data_db.set(username, user_data)
+
                 else:
                     user_data['friends_list'] = {}
-                    self.data_db.set(username, user_data)
+                self.data_db.set(username, user_data)
 
                 self.data_db_lock.release()
                 return jsonify({'status': 'ok'})
@@ -519,7 +524,7 @@ class HCatServer:
             auth_status, msg = self.authenticate_token(username, token)
             if auth_status:
                 # 取用户数据
-                user_data = self.data_db.get(username)
+                user_data = util.get_user_data(self.data_db, username)
                 # 判断并返回好友列表
                 if 'friends_list' in user_data:
                     return jsonify({'status': 'ok', 'data': user_data['friends_list']})
@@ -562,7 +567,7 @@ class HCatServer:
             # 验证用户名与token
             auth_status, msg = self.authenticate_token(username, token)
             if auth_status:
-                data = self.data_db.get(username)
+                data = util.get_user_data(self.data_db, username)
                 if 'todo_list' in data:
                     # 取得结果
                     res = data['todo_list']
@@ -613,9 +618,12 @@ class HCatServer:
             token = req_data['token']
             friend_username = req_data['friend_username']
             msg = req_data['msg']
-            data = self.data_db.get(username)
+            data = util.get_user_data(self.data_db, username)
             # 判断是否为空
-            if 'friends_list' not in data or friend_username not in data['friends_list']:
+            if 'friends_list' not in data:
+                data['friends_list'] = {}
+
+            if friend_username not in data['friends_list']:
                 return jsonify({'status': 'null', 'message': 'friends not exists.'})
 
             self.data_db_lock.acquire()
@@ -668,7 +676,7 @@ class HCatServer:
 
     def authenticate_token(self, username, token):
         if self.data_db.exists(username):
-            if self.data_db.get(username)['token'] == token:
+            if util.get_user_data(self.data_db, username)['token'] == token:
                 return True, None
             else:
                 return False, jsonify({'status': 'error', 'message': 'token error'})

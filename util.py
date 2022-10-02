@@ -1,10 +1,13 @@
 import hashlib
+import json
 import random
+
+from pickledb import PickleDB
 
 
 def get_random_token(key_len=128):
     return ''.join(
-        [chr(random.choice(list(range(65, 91)) + list(range(97, 123)) + list(range(48, 58)))) for i in range(key_len)])
+        [chr(random.choice(list(range(65, 91)) + list(range(97, 123)) + list(range(48, 58)))) for _ in range(key_len)])
 
 
 def salted_hash(data, salt, additional_string=None):
@@ -25,3 +28,10 @@ def request_parse(req_data):
     else:
         data = {}
     return data
+
+
+def get_user_data(db: PickleDB, username) -> json:
+    if db.exists(username):
+        return db.get(username)
+    else:
+        return {}
