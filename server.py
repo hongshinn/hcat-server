@@ -33,6 +33,46 @@ class HCatServer:
         def main_page():
             return 'hcat'
 
+        # 注册路由
+        # 注册登出路由
+        # POST/GET /auth/logout
+        #  username: string
+        #  token: string
+        # return:
+        #  status: string
+        #  message: string
+        @self.app.route('/auth/logout', methods=['GET', 'POST'])
+        def logout():
+            req_data = util.request_parse(request)
+
+            # 判断请求体是否为空
+            if 'username' not in req_data or 'token' not in req_data:
+                return jsonify({'status': 'error', 'message': 'username or token is missing'})
+
+            # 获取请求参数
+            username = req_data['username']
+            token = req_data['token']
+
+            # 判断用户名是否存在
+            if username not in self.auth_db.getall():
+                return jsonify({'status': 'null', 'message': 'username is not exist'})
+
+                # 验证用户名与token
+            auth_status, msg = self.authenticate_token(username, token)
+            if auth_status:
+                # 写入数据库
+                self.data_db_lock.acquire()
+                userdata = self.data_db.get(username)
+                userdata['status'] = 'offline'
+                userdata['token'] = ''
+                self.data_db.set(username, userdata)
+                self.data_db_lock.release()
+                return jsonify({'status': 'ok'})
+
+            else:
+                self.data_db_lock.release()
+                return msg
+
         # 注册登录路由
         # POST/GET /auth/login
         #  username: string
