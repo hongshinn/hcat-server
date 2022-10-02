@@ -34,16 +34,25 @@ class HCatServer:
         def main_page():
             return main_page_content
 
-        # 注册路由
-        # 注册登出路由
-        # POST/GET /auth/logout
-        #  username: string
-        #  token: string
-        # return:
-        #  status: string
-        #  message: string
         @self.app.route('/auth/logout', methods=['GET', 'POST'])
         def logout():
+            """
+            注册登出路由
+
+            方法:POST/GET
+
+            地址:/auth/logout
+
+            参数:
+             username: string
+
+             token: string
+
+            返回:
+              status: string
+
+              message: string
+            """
             req_data = util.request_parse(request)
 
             # 判断请求体是否为空
@@ -74,16 +83,27 @@ class HCatServer:
                 self.data_db_lock.release()
                 return msg
 
-        # 注册登录路由
-        # POST/GET /auth/login
-        #  username: string
-        #  password: string
-        # return:
-        #  status: string
-        #  token: string
-        #  message: string
         @self.app.route('/auth/login', methods=['GET', 'POST'])
         def login():
+            """
+            注册登录路由
+
+            方法:POST/GET
+
+            路径:/auth/login
+
+            参数:
+             username: string
+
+             password: string
+
+            返回:
+             status: string
+
+             token: string
+
+             message: string
+            """
             req_data = util.request_parse(request)
 
             # 判断请求体是否为空
@@ -118,16 +138,25 @@ class HCatServer:
             else:
                 return jsonify({'status': 'error', 'message': 'username or password is incorrect'})
 
-        # 注册注册路由
-        # POST/GET /auth/register
-        #  username: string
-        #  password: string
-        #  display_name: string
-        # return:
-        #  status: string
-        #  message: string
         @self.app.route('/auth/register', methods=['POST', 'GET'])
         def register():
+            """
+            方法:POST/GET
+
+            路径:/auth/register
+
+            参数:
+             username: string
+
+             password: string
+
+             display_name: string
+
+            返回:
+             status: string
+
+             message: string
+            """
             req_data = util.request_parse(request)
             # 判断请求体是否为空
             if 'username' not in req_data or 'password' not in req_data or 'display_name' not in req_data:
@@ -160,44 +189,74 @@ class HCatServer:
                                             'display_name': display_name})
                 return jsonify({'status': 'ok', 'message': 'register success'})
 
-        # 获取显示名称
-        # GET /auth/get_display_name/<username>
-        #  username: string
-        # return:
-        #  status: string
-        #  display_name: string
         @self.app.route('/auth/get_display_name/<username>', methods=['GET'])
         def get_display_name(username):
+            """
+            获取显示名称
+
+            方法:GET
+
+            路径:/auth/get_display_name/<username>
+
+            参数:
+             username: string
+
+            返回:
+             status: string
+
+             display_name: string
+            """
             # 判断用户名是否存在
             if self.auth_db.exists(username):
                 return jsonify({'status': 'ok', 'display_name': self.auth_db.get(username)['display_name']})
             else:
                 return jsonify({'status': 'null', 'message': 'username not exists'})
 
-        # 获取状态
-        # GET /status/<username>
-        #  username: string
-        # return: json
-        #  status: string (online/offline/null)
         @self.app.route('/auth/status/<username>', methods=['GET'])
         def status(username):
+            """
+            获取状态
+
+            方法:GET
+
+            路径:/status/<username>
+
+            参数:
+             username: string
+
+            返回:
+             status: string (online/offline/null)
+            """
             # 判断用户名是否存在
             if self.data_db.exists(username):
                 return jsonify({'status': self.data_db.get(username)['status']})
             else:
                 return jsonify({'status': 'null', 'message': 'username not exists'})
 
-        # 添加好友
-        # POST/GET /friend/add/
-        #  username: string
-        #  token: string
-        #  friend_username: string
-        #  additional_information: string
-        # return:
-        #  status: string (ok/error/null)
-        #  message: string
         @self.app.route('/friend/add/', methods=['POST', 'GET'])
         def add_friend():
+            """
+            添加好友
+
+            方法:POST/GET
+
+            路径:/friend/add/
+
+            参数:
+             username: string
+
+             token: string
+
+             friend_username: string
+
+             additional_information: string
+
+            返回:
+             status: string (ok/error/null)
+
+             message: string
+
+            """
             req_data = util.request_parse(request)
             # 判断请求体是否为空
             if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
@@ -256,16 +315,28 @@ class HCatServer:
             else:
                 return msg
 
-        # 同意好友申请
-        # POST/GET /friend/agree/
-        #  username: string
-        #  token: string
-        #  rid: string
-        # return:
-        #  status: string (ok/error/null)
-        #  message: string
         @self.app.route('/friend/agree/', methods=['POST', 'GET'])
         def agree_friend():
+            """
+            同意好友申请
+
+            方法:POST/GET
+
+            路径:/friend/agree/
+
+            参数:
+             username: string
+
+             token: string
+
+             rid: string
+
+            返回:
+             status: string (ok/error/null)
+
+             message: string
+
+            """
             req_data = util.request_parse(request)
             # 判断请求体是否为空
             if 'username' not in req_data or 'token' not in req_data or 'rid' not in req_data:
@@ -342,16 +413,27 @@ class HCatServer:
                 self.data_db_lock.release()
                 return msg
 
-        # 删除好友
-        # POST/GET /friend/delete/
-        #  username: string
-        #  token: string
-        #  friend_username: string
-        # return:
-        #  status: string (ok/error/null)
-        #  message: string
         @self.app.route('/friend/delete/', methods=['POST', 'GET'])
         def delete_friend():
+            """
+            删除好友
+
+            方法:POST/GET
+
+            路径:/friend/delete/
+
+            参数:
+             username: string
+
+             token: string
+
+             friend_username: string
+
+            返回:
+             status: string (ok/error/null)
+
+             message: string
+            """
             req_data = util.request_parse(request)
             # 判断请求体是否为空
             if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
@@ -403,16 +485,27 @@ class HCatServer:
                 self.data_db_lock.release()
                 return msg
 
-        # 获取好友列表
-        # POST/GET /friend/get_friends_list/
-        #  username: string
-        #  token: string
-        # return:
-        #  status: string (ok/error/null)
-        #  message: string
-        #  data: dict
         @self.app.route('/friend/get_friends_list/', methods=['POST', 'GET'])
         def get_friend_list():
+            """
+            获取好友列表
+
+            方法:POST/GET
+
+            路径:/friend/get_friends_list/
+
+            参数:
+             username: string
+
+             token: string
+
+            返回:
+             status: string (ok/error/null)
+
+             message: string
+
+             data: dict
+            """
             req_data = util.request_parse(request)
             # 判断请求体是否为空
             if 'username' not in req_data or 'token' not in req_data:
@@ -436,16 +529,27 @@ class HCatServer:
             else:
                 return msg
 
-        # 获取todolist
-        # POST/GET /auth/get_todo_list/
-        #  username: string
-        #  token: string
-        # return:
-        #  status: string (ok/error/null)
-        #  message: string
-        #  data: list<string>
         @self.app.route('/auth/get_todo_list/', methods=['POST', 'GET'])
         def get_todo_list():
+            """
+            获取todolist
+
+            方法:POST/GET
+
+            路径:/auth/get_todo_list/
+
+            参数:
+             username: string
+
+             token: string
+
+            返回:
+             status: string (ok/error/null)
+
+             message: string
+
+             data: list<string>
+            """
             req_data = util.request_parse(request)
             # 判断请求体是否为空
             if 'username' not in req_data or 'token' not in req_data:
@@ -473,17 +577,29 @@ class HCatServer:
             else:
                 return msg
 
-        # 发送好友信息
-        # POST/GET /chat/friend/send_msg/
-        #  username: string
-        #  token: string
-        #  friend_username: string
-        #  msg: dict
-        # return:
-        #  status: string
-        #  message: string
         @app.route('/chat/friend/send_msg/', methods=['POST', 'GET'])
         def send_friend_msg():
+            """
+            发送好友信息
+
+            方法:POST/GET
+
+            路径:/chat/friend/send_msg/
+
+            参数:
+             username: string
+
+             token: string
+
+             friend_username: string
+
+             msg: dict
+
+            返回:
+             status: string
+
+             message: string
+            """
             req_data = util.request_parse(request)
             # 判断请求体是否为空
             if 'username' not in req_data \
@@ -531,7 +647,6 @@ class HCatServer:
                 self.data_db_lock.release()
                 return rt_msg
 
-    # TODO: log out
     def start(self):
         threading.Thread(target=self._event_log_clear_thread).start()
         self.app.run(host=self.address[0], port=self.address[1])
