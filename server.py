@@ -258,13 +258,16 @@ class HCatServer:
                     # 检测是否存在todo_list
                     if 'todo_list' not in friend_data:
                         friend_data['todo_list'] = []
-
+                    # 创建事件
+                    ec = EventContainer(self.event_log_db, self.event_log_db_lock)
+                    ec. \
+                        add('type', 'friend_agree'). \
+                        add('rid', ec.rid). \
+                        add('username', username). \
+                        add('time', time.time())
+                    ec.write()
                     # 将同意申请加入朋友的todo_list
-                    friend_data['todo_list'].append(
-                        {'type': 'friend_agree',
-                         'rid': get_random_token(8),
-                         'username': username,
-                         'time': time.time()})
+                    friend_data['todo_list'].append(ec.json)
 
                     # 检测是否存在朋友列表
                     if 'friends_list' not in friend_data:
@@ -323,13 +326,12 @@ class HCatServer:
                 # 检测是否存在todo_list
                 if 'todo_list' not in friend_data:
                     friend_data['todo_list'] = []
-
+                # 创建事件
+                ec = EventContainer(self.event_log_db, self.event_log_db_lock)
+                ec.add('type', 'friend_deleted').add('rid', ec.rid).add('username', username).add('time', time.time())
+                ec.write()
                 # 将好友删除事件加入朋友的todo_list
-                friend_data['todo_list'].append(
-                    {'type': 'friend_deleted',
-                     'rid': get_random_token(8),
-                     'username': username,
-                     'time': time.time()})
+                friend_data['todo_list'].append(ec.json)
                 if 'friends_list' in friend_data:
                     # 从好友的好友列表删除
                     del friend_data['friends_list'][username]
@@ -464,13 +466,16 @@ class HCatServer:
                 if 'todo_list' not in friend_data:
                     friend_data['todo_list'] = []
 
+                ec = EventContainer(self.event_log_db, self.event_log_db_lock)
+                ec. \
+                    add('type', 'friend_msg'). \
+                    add('rid', ec.rid). \
+                    add('username', username). \
+                    add('msg', msg). \
+                    add('time', time.time())
+                ec.write()
                 # 清空todo_list
-                friend_data['todo_list'].append(
-                    {'type': 'friend_msg',
-                     'rid': get_random_token(8),
-                     'username': username,
-                     'msg': msg,
-                     'time': time.time()})
+                friend_data['todo_list'].append(ec.json)
 
                 # 计入数据库
                 self.data_db.set(friend_username, friend_data)
@@ -481,7 +486,6 @@ class HCatServer:
                 self.data_db_lock.release()
                 return rt_msg
 
-    # TODO:事件对象的存储
     # TODO: log out
     def start(self):
         threading.Thread(target=self._event_log_clear_thread).start()
