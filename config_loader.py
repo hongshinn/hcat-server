@@ -7,4 +7,5 @@ class Config:
         self.IP = config['IP']
         self.Port = config['Port']
         self.GCTime = config['GCTime']
+        self.EventTimeout = config['EventTimeout']
         self.MainPageContent = config['MainPageContent']

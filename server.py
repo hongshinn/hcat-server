@@ -11,14 +11,16 @@ from util import *
 
 
 class HCatServer:
-    def __init__(self, address, gc_time, main_page_content):
+    def __init__(self, address, gc_time, main_page_content, event_timeout):
         # 初始化Flask对象
         app = Flask(__name__)
         CORS(app)
         self.app = app
+
         # 初始化变量
         self.address = address
         self.gc_time = gc_time
+        self.event_timeout = event_timeout
 
         # 创建数据库对象
         self.auth_db = pickledb.load('auth.db', True)
@@ -678,11 +680,13 @@ class HCatServer:
         while True:
             i = 0
             self.event_log_db_lock.acquire()
+            del_list = []
             for j in self.event_log_db.getall():
                 event_time = self.event_log_db.get(j)['time']
-                if time.time() - event_time >= 604800:
+                if time.time() - event_time >= self.event_timeout:
                     i += 1
-                    self.event_log_db.rem(j)
+                    del_list.append(j)
+            [self.event_log_db.rem(j) for j in del_list]
             self.event_log_db_lock.release()
             if i > 0:
                 print('Cleaned up {} expired events.'.format(i))
