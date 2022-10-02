@@ -7,6 +7,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 import util
+from event_container import EventContainer
 from util import *
 
 
@@ -194,21 +195,16 @@ class HCatServer:
                     while self.event_log_db.exists(rid):
                         rid = get_random_token(8)
                     # 加锁
-                    self.event_log_db_lock.acquire()
-                    self.event_log_db. \
-                        set(rid,
-                            {'type': 'friend_request',
-                             'username': username,
-                             'time': time.time()}
-                            )
-                    # 解锁
-                    self.event_log_db_lock.release()
-                    friend_data['todo_list'].append(
-                        {'type': 'friend_request',
-                         'rid': rid,
-                         'username': username,
-                         'additional_information': additional_information,
-                         'time': time.time()})
+                    ec = EventContainer(self.event_log_db, self.event_log_db_lock)
+                    ec. \
+                        add('type', 'friend_request'). \
+                        add('rid', ec.rid). \
+                        add('username', username). \
+                        add('additional_information', additional_information). \
+                        add('time', time.time())
+                    ec.write()
+
+                    friend_data['todo_list'].append(ec.json)
                     self.data_db.set(friend_username, friend_data)
                     return jsonify({'status': 'ok', 'message': 'add friend success'})
 
@@ -485,6 +481,8 @@ class HCatServer:
                 self.data_db_lock.release()
                 return rt_msg
 
+    # TODO:事件对象的存储
+    # TODO: log out
     def start(self):
         threading.Thread(target=self._event_log_clear_thread).start()
         self.app.run(host=self.address[0], port=self.address[1])
@@ -494,11 +492,11 @@ class HCatServer:
         while True:
             i = 0
             self.event_log_db_lock.acquire()
-            for i in self.event_log_db.getall():
-                event_time = self.event_log_db.get(i)['time']
+            for j in self.event_log_db.getall():
+                event_time = self.event_log_db.get(j)['time']
                 if time.time() - event_time >= 604800:
                     i += 1
-                    self.event_log_db.rem(i)
+                    self.event_log_db.rem(j)
             self.event_log_db_lock.release()
             if i > 0:
                 print('Cleaned up {} expired events.'.format(i))
