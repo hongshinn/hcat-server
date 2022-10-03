@@ -147,6 +147,24 @@ class HCatServer:
 
                 return ReturnData(ReturnData.ERROR, 'username or password is incorrect').json()
 
+        @self.app.route('/auth/authenticate_token', methods=['GET', 'POST'])
+        def authenticate_token():
+            req_data = request_parse(request)
+            # 判断请求体是否为空
+            if 'username' not in req_data or 'token' not in req_data:
+                return ReturnData(ReturnData.ERROR, 'username or token is missing').json()
+
+            # 获取请求参数
+            username = req_data['username']
+            token = req_data['token']
+
+            # 验证用户名与token
+            auth_status, msg = self.authenticate_token(username, token)
+            if auth_status:
+                return ReturnData(ReturnData.OK).json()
+            else:
+                return msg
+
         @self.app.route('/auth/register', methods=['POST', 'GET'])
         def register():
             """
