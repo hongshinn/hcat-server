@@ -8,13 +8,15 @@ class HCat:
         self.event_dict: dict[object][list[FunctionType]] = {}
 
     def event_handle(self, func):
-        if len(func.__annotations__) > 1:
+        arg_len = len(func.__annotations__)
+        if arg_len > 1:
             raise 'unexpected arguments.'
-        elif len(func.__annotations__) == 0:
+        elif arg_len == 0:
             raise 'missing arguments'
-        if list(func.__annotations__.values())[0] not in self.event_dict:
-            self.event_dict[list(func.__annotations__.values())[0]] = []
-        self.event_dict[list(func.__annotations__.values())[0]].append(func)
+        event_type = func.__annotations__.values()[0]
+        if list(event_type) not in self.event_dict:
+            self.event_dict[list(event_type)] = []
+        self.event_dict[list(event_type)].append(func)
 
     def __call__(self, e):
         if type(e) in self.event_dict:
