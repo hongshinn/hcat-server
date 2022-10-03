@@ -24,8 +24,6 @@ class HCatServer:
         self.gc_time = gc_time
         self.event_timeout = event_timeout
 
-        self.hcat = HCat()
-        self.hcat.load_all_plugin()
         # 创建数据库对象
         self.auth_db = pickledb.load('auth.db', True)
         self.data_db = pickledb.load('data.db', True)
@@ -34,6 +32,10 @@ class HCatServer:
         # 创建锁
         self.data_db_lock = threading.Lock()
         self.event_log_db_lock = threading.Lock()
+
+        # 加载插件
+        self.hcat = HCat()
+        self.hcat.load_all_plugins()
 
         @self.app.route('/', methods=['GET'])
         def main_page():
