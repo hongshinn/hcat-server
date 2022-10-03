@@ -327,7 +327,7 @@ class HCatServer:
                     friend_data['todo_list'].append(ec.json)
                     self.data_db.set(friend_username, friend_data)
 
-                    return ReturnData(ReturnData.ERROR, 'add friend success').json()
+                    return ReturnData(ReturnData.OK, 'add friend success').json()
 
             else:
                 return msg
