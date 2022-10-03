@@ -1,6 +1,7 @@
 import re
 import threading
 import time
+from typing import Union
 
 import pickledb
 from flask import Flask, request
@@ -82,7 +83,6 @@ class HCatServer:
                 return ReturnData(ReturnData.OK).json()
 
             else:
-                self.data_db_lock.release()
                 return msg
 
         @self.app.route('/auth/login', methods=['GET', 'POST'])
@@ -692,12 +692,17 @@ class HCatServer:
                 print('Cleaned up {} expired events.'.format(i))
             time.sleep(self.gc_time)
 
-    def authenticate_token(self, username, token):
+    def authenticate_token(self, username: str, token: str) -> tuple[bool, Union[dict, None]]:
+        """
+
+        :param username: str
+        :param token: str
+        :return: tuple[bool, Union[dict, None]]
+        """
         if self.data_db.exists(username):
             if get_user_data(self.data_db, username)['token'] == token:
                 return True, None
             else:
-
                 return False, ReturnData(ReturnData.ERROR, 'token error').json()
         else:
             return False, ReturnData(ReturnData.NULL, 'username not exists').json()
