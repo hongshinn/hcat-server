@@ -37,7 +37,7 @@ class HCat:
                 module = importlib.import_module(module_name)
                 # 获取配置
                 plugin_config = getattr(module, 'Config')()
-                if 'init' in dir(module) and plugin_config.name not in self.plugin_list:
+                if 'main' in dir(module) and plugin_config.name not in self.plugin_list:
                     self.plugin_list.append(plugin_config.name)
                     request_list[plugin_config.name] = {'plugin_config': plugin_config, 'module': module,
                                                         'work_space': dir_path}
@@ -47,7 +47,7 @@ class HCat:
             for i in plugin_config.depend:
                 can_load = can_load and (i in request_list)
             if can_load:
-                getattr(request_list[k]['module'], 'init')(self, request_list[k]['work_space'])
+                getattr(request_list[k]['module'], 'main')(self, request_list[k]['work_space'])
                 print('[Plugin] "{}" is loaded. ver:{}.'.format(plugin_config.name, plugin_config.version))
 
     def reload_all_plugins(self):

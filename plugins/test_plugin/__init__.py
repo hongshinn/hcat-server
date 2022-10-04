@@ -3,7 +3,7 @@ from events.auth import AuthLogout
 from plugin_manager.manager import HCat, PluginConfig
 
 
-def init(hcat: HCat, workspace: str):
+def main(hcat: HCat, workspace: str):
     @hcat.event_handle
     def auth_logout(e: AuthLogout):
         # e.return_data = ReturnData(ReturnData.ERROR, '测试')

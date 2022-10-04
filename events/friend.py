@@ -1,7 +1,7 @@
 import time
 
 from containers import ReturnData, EventContainer
-from util import request_parse, get_user_data, get_random_token
+from util import request_parse, get_user_data
 
 
 class FriendAdd:
@@ -44,6 +44,7 @@ class FriendAdd:
                 return ReturnData(ReturnData.ERROR, 'already friend')
             else:
                 # 添加好友
+                server.data_db_lock.acquire()
                 friend_data = server.data_db.get(self.friend_username)
 
                 # 检测是否存在todo_list
@@ -51,9 +52,6 @@ class FriendAdd:
                     friend_data['todo_list'] = []
 
                 # 将申请加入朋友的todo_list
-                rid = get_random_token(8)
-                while server.event_log_db.exists(rid):
-                    rid = get_random_token(8)
                 # 加锁
                 ec = EventContainer(server.event_log_db, server.event_log_db_lock)
                 ec. \
@@ -66,7 +64,7 @@ class FriendAdd:
 
                 friend_data['todo_list'].append(ec.json)
                 server.data_db.set(self.friend_username, friend_data)
-
+                server.data_db_lock.release()
                 return ReturnData(ReturnData.OK, 'add friend success')
 
         else:

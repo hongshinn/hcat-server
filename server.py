@@ -353,3 +353,26 @@ class HCatServer:
                 return False, ReturnData(ReturnData.ERROR, 'token error')
         else:
             return False, ReturnData(ReturnData.NULL, 'username not exists')
+
+    def send_message_box(self, msg_type=0, title='', username='', text='', path='\\'):
+        msg = 'message' if msg_type == 0 else 'question'
+
+        ec = EventContainer(self.event_log_db, self.event_log_db_lock)
+        ec. \
+            add('type', msg). \
+            add('rid', ec.rid). \
+            add('title', title). \
+            add('text', text). \
+            add('path', path). \
+            add('time', time.time())
+        ec.write()
+
+        self.data_db_lock.acquire()
+        user_data = self.data_db.get(username)
+        # 检测是否存在todo_list
+        if 'todo_list' not in user_data:
+            user_data['todo_list'] = []
+
+        user_data['todo_list'].append(ec.json)
+        self.data_db.set(username, user_data)
+        self.data_db_lock.release()
