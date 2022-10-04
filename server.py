@@ -1,3 +1,4 @@
+HCatServer = None
 import threading
 from typing import Union
 
@@ -11,6 +12,8 @@ from events.friend import *
 from plugin_manager.manager import HCat
 from util import *
 
+del HCatServer
+
 
 class HCatServer:
     def __init__(self, address, gc_time, main_page_content, event_timeout):
@@ -23,7 +26,7 @@ class HCatServer:
         self.address = address
         self.gc_time = gc_time
         self.event_timeout = event_timeout
-
+        self.get_todo_list_count = {}
         # 创建数据库对象
         self.auth_db = pickledb.load('auth.db', True)
         self.data_db = pickledb.load('data.db', True)
@@ -319,6 +322,7 @@ class HCatServer:
             return e.return_data.json()
 
     def start(self):
+        threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
         self.app.run(host=self.address[0], port=self.address[1])
 
@@ -338,6 +342,25 @@ class HCatServer:
             if i > 0:
                 print('Cleaned up {} expired events.'.format(i))
             time.sleep(self.gc_time)
+
+    def _detection_online_thread(self):
+        while True:
+            self.data_db_lock.acquire()
+            # 遍历用户
+            for username in self.get_todo_list_count:
+                # 获取用户数据
+                user_data = get_user_data(self.data_db, username)
+                # 判断
+                if self.get_todo_list_count[username] == 0:
+                    user_data['status'] = 'offline'
+                else:
+                    user_data['status'] = 'online'
+                # 写入数据
+                self.data_db.set(username, user_data)
+                # 清空计次
+                self.get_todo_list_count[username] = 0
+            self.data_db_lock.release()
+            time.sleep(30)
 
     def authenticate_token(self, username: str, token: str) -> tuple[bool, Union[ReturnData, None]]:
         """

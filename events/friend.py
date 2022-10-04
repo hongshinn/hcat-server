@@ -1,18 +1,19 @@
 import time
 
 from containers import ReturnData, EventContainer
+from server import HCatServer
 from util import request_parse, get_user_data
 
 
 class FriendAdd:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
         self.friend_username: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
@@ -72,14 +73,14 @@ class FriendAdd:
 
 
 class FriendAgree:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
         self.rid: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data or 'rid' not in req_data:
@@ -160,14 +161,14 @@ class FriendAgree:
 
 
 class FriendDelete:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
         self.friend_username: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
@@ -222,13 +223,13 @@ class FriendDelete:
 
 
 class FriendGetFriendsList:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data:

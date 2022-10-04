@@ -1,17 +1,18 @@
 import re
 
 from containers import ReturnData
+from server import HCatServer
 from util import request_parse, get_user_data, salted_hash, get_random_token
 
 
 class AuthAuthenticateToken:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data:
@@ -43,13 +44,13 @@ class AuthGetDisplayName:
 
 
 class AuthGetTodoList:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data:
@@ -62,7 +63,15 @@ class AuthGetTodoList:
         # 验证用户名与token
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
+            # 在线判断计次
+            server.data_db_lock.acquire()
+            if self.username in server.get_todo_list_count:
+                server.get_todo_list_count[self.username] += 1
+            else:
+                server.get_todo_list_count[self.username] = 0
+
             data = get_user_data(server.data_db, self.username)
+            # 取todo_list
             if 'todo_list' in data:
                 # 取得结果
                 res = data['todo_list']
@@ -72,20 +81,22 @@ class AuthGetTodoList:
             data['todo_list'] = []
             # 计入数据库
             server.data_db.set(self.username, data)
+            server.data_db_lock.release()
             return ReturnData(ReturnData.OK).add('data', res)
 
         else:
+            server.data_db_lock.release()
             return msg
 
 
 class AuthLogin:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.password: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
@@ -130,13 +141,13 @@ class AuthLogin:
 
 
 class AuthLogout:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
@@ -169,14 +180,14 @@ class AuthLogout:
 
 
 class AuthRegister:
-    def __init__(self, server, req):
+    def __init__(self, server: HCatServer, req):
         self.username: str
         self.password: str
         self.display_name: str
         self.server = server
         self.return_data = self._run(server, req)
 
-    def _run(self, server, request):
+    def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
         if 'username' not in req_data or 'password' not in req_data or 'display_name' not in req_data:
