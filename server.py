@@ -63,7 +63,7 @@ class HCatServer:
 
               message: string
             """
-            e = AuthLogout(self, request)
+            e = Logout(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -88,13 +88,13 @@ class HCatServer:
 
              message: string
             """
-            e = AuthLogin(self, request)
+            e = Login(self, request)
             self.hcat(e)
             return e.return_data.json()
 
         @self.app.route('/auth/authenticate_token', methods=['GET', 'POST'])
         def authenticate_token():
-            e = AuthAuthenticateToken(self, request)
+            e = AuthenticateToken(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -117,7 +117,7 @@ class HCatServer:
 
              message: string
             """
-            e = AuthRegister(self, request)
+            e = Register(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -139,7 +139,7 @@ class HCatServer:
              display_name: string
             """
             # 判断用户名是否存在
-            e = AuthGetDisplayName(self, username)
+            e = GetDisplayName(self, username)
             self.hcat(e)
             return e.return_data.json()
 
@@ -161,7 +161,57 @@ class HCatServer:
              user_status: string(online/offline)
             """
 
-            e = AuthStatus(self, username)
+            e = Status(self, username)
+            self.hcat(e)
+            return e.return_data.json()
+
+        @self.app.route('/auth/rename', methods=['POST', 'GET'])
+        def rename():
+            """
+            重命名
+
+            方法:POST/GET
+
+            路径:/auth/rename
+
+            参数:
+             username: string
+
+             token: string
+
+             display_name
+
+            返回:
+             status: string (ok/error/null)
+
+             message: string
+            """
+            e = Rename(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
+        @self.app.route('/auth/get_todo_list', methods=['POST', 'GET'])
+        def get_todo_list():
+            """
+            获取todolist
+
+            方法:POST/GET
+
+            路径:/auth/get_todo_list
+
+            参数:
+             username: string
+
+             token: string
+
+            返回:
+             status: string (ok/error/null)
+
+             message: string
+
+             data: list<string>
+            """
+            e = GetTodoList(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -172,7 +222,7 @@ class HCatServer:
 
             方法:POST/GET
 
-            路径:/friend/add/
+            路径:/friend/add
 
             参数:
              username: string
@@ -200,7 +250,7 @@ class HCatServer:
 
             方法:POST/GET
 
-            路径:/friend/agree/
+            路径:/friend/agree
 
             参数:
              username: string
@@ -226,7 +276,7 @@ class HCatServer:
 
             方法:POST/GET
 
-            路径:/friend/delete/
+            路径:/friend/delete
 
             参数:
              username: string
@@ -251,7 +301,7 @@ class HCatServer:
 
             方法:POST/GET
 
-            路径:/friend/get_friends_list/
+            路径:/friend/get_friends_list
 
             参数:
              username: string
@@ -269,39 +319,14 @@ class HCatServer:
             self.hcat(e)
             return e.return_data.json()
 
-        @self.app.route('/auth/get_todo_list', methods=['POST', 'GET'])
-        def get_todo_list():
-            """
-            获取todolist
-
-            方法:POST/GET
-
-            路径:/auth/get_todo_list/
-
-            参数:
-             username: string
-
-             token: string
-
-            返回:
-             status: string (ok/error/null)
-
-             message: string
-
-             data: list<string>
-            """
-            e = AuthGetTodoList(self, request)
-            self.hcat(e)
-            return e.return_data.json()
-
-        @app.route('/chat/friend/send_msg', methods=['POST', 'GET'])
+        @self.app.route('/chat/friend/send_msg', methods=['POST', 'GET'])
         def send_friend_msg():
             """
             发送好友信息
 
             方法:POST/GET
 
-            路径:/chat/friend/send_msg/
+            路径:/chat/friend/send_msg
 
             参数:
              username: string
@@ -377,7 +402,7 @@ class HCatServer:
         else:
             return False, ReturnData(ReturnData.NULL, 'username not exists')
 
-    def send_message_box(self, msg_type=0, title='', username='', text='', path='\\'):
+    def send_message_box(self, msg_type=0, title='', username='', text='', path='\\', param_name='text'):
         msg = 'message' if msg_type == 0 else 'question'
 
         ec = EventContainer(self.event_log_db, self.event_log_db_lock)
@@ -387,6 +412,7 @@ class HCatServer:
             add('title', title). \
             add('text', text). \
             add('path', path). \
+            add('param_name', param_name). \
             add('time', time.time())
         ec.write()
 

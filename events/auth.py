@@ -5,7 +5,7 @@ from server import HCatServer
 from util import request_parse, get_user_data, salted_hash, get_random_token
 
 
-class AuthAuthenticateToken:
+class AuthenticateToken:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
@@ -30,7 +30,7 @@ class AuthAuthenticateToken:
             return msg
 
 
-class AuthGetDisplayName:
+class GetDisplayName:
     def __init__(self, server, username):
         self.username = username
         self.server = server
@@ -43,7 +43,7 @@ class AuthGetDisplayName:
             return ReturnData(ReturnData.OK, 'username not exists')
 
 
-class AuthGetTodoList:
+class GetTodoList:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
@@ -89,7 +89,7 @@ class AuthGetTodoList:
             return msg
 
 
-class AuthLogin:
+class Login:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.password: str
@@ -140,7 +140,7 @@ class AuthLogin:
             return ReturnData(ReturnData.ERROR, 'username or password is incorrect')
 
 
-class AuthLogout:
+class Logout:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
@@ -179,7 +179,7 @@ class AuthLogout:
             return msg
 
 
-class AuthRegister:
+class Register:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.password: str
@@ -223,7 +223,7 @@ class AuthRegister:
             return ReturnData(ReturnData.OK, 'register success')
 
 
-class AuthStatus:
+class Status:
     def __init__(self, server, username):
         self.username = username
         self.server = server
@@ -237,3 +237,33 @@ class AuthStatus:
         else:
 
             return ReturnData(ReturnData.NULL, 'username not exists')
+
+
+class Rename:
+    def __init__(self, server: HCatServer, req):
+        self.username: str
+        self.token: str
+        self.display_name: str
+        self.server = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if 'username' not in req_data or 'token' not in req_data or 'display_name' not in req_data:
+            return ReturnData(ReturnData.ERROR, 'username password or display_name is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.display_name = req_data['display_name']
+        # 验证密钥
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            auth_data = server.auth_db.get(self.username)
+            self.former_name = auth_data['display_name']
+            auth_data['display_name'] = self.display_name
+            server.auth_db.set(self.username, auth_data)
+            return ReturnData(ReturnData.OK)
+        else:
+            return msg
