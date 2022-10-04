@@ -267,3 +267,58 @@ class Rename:
             return ReturnData(ReturnData.OK)
         else:
             return msg
+
+
+class ChangePassword:
+    def __init__(self, server: HCatServer, req):
+        self.username: str
+        self.token: str
+        self.password: str
+        self.new_password: str
+        self.server = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if 'username' not in req_data or 'token' not in req_data or 'password' not in req_data or \
+                'new_password' not in req_data:
+            return ReturnData(ReturnData.ERROR, 'username password or display_name is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.password = req_data['password']
+        self.new_password = req_data['new_password']
+
+        # 验证密钥
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            # 判断用户名是否存在
+            if self.username not in server.auth_db.getall():
+                return ReturnData(ReturnData.NULL, 'username is not exist')
+
+            # 判断用户名和密码是否正确
+            if server.auth_db.get(self.username)['password'] == salted_hash(self.password,
+                                                                            server.auth_db.get(self.username)['salt'],
+                                                                            self.username):
+                # 判断密码是否符合要求
+                if len(self.new_password) < 6:
+                    return ReturnData(ReturnData.ERROR, 'password is too short')
+
+                salt = get_random_token(16)
+                server.auth_db_lock.acquire()
+                auth_data = server.auth_db.get(self.username)
+                auth_data['password'] = salted_hash(self.new_password, salt, self.username)
+                auth_data['salt'] = salt
+                server.auth_db.set(self.username, auth_data)
+                server.auth_db_lock.release()
+
+                # 返回结果
+
+                return ReturnData(ReturnData.OK, 'change success')
+            else:
+
+                return ReturnData(ReturnData.ERROR, 'old password is incorrect')
+        else:
+            return msg

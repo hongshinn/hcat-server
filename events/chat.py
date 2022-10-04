@@ -5,7 +5,7 @@ from server import HCatServer
 from util import request_parse, get_user_data
 
 
-class ChatFriendSendMsg:
+class SendFriendMsg:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str

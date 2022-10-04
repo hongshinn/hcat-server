@@ -35,6 +35,7 @@ class HCatServer:
         # 创建锁
         self.data_db_lock = threading.Lock()
         self.event_log_db_lock = threading.Lock()
+        self.auth_db_lock = threading.Lock()
 
         # 加载插件
         self.hcat = HCat()
@@ -89,6 +90,12 @@ class HCatServer:
              message: string
             """
             e = Login(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
+        @self.app.route('/auth/change_password', methods=['GET', 'POST'])
+        def change_password():
+            e = ChangePassword(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -239,7 +246,7 @@ class HCatServer:
              message: string
 
             """
-            e = FriendAdd(self, request)
+            e = AddFriend(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -265,7 +272,7 @@ class HCatServer:
              message: string
 
             """
-            e = FriendAgree(self, request)
+            e = AgreeFriendRequire(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -290,7 +297,7 @@ class HCatServer:
 
              message: string
             """
-            e = FriendDelete(self, request)
+            e = DeleteFriend(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -315,7 +322,7 @@ class HCatServer:
 
              data: dict
             """
-            e = FriendGetFriendsList(self, request)
+            e = GetFriendsList(self, request)
             self.hcat(e)
             return e.return_data.json()
 
@@ -342,7 +349,7 @@ class HCatServer:
 
              message: string
             """
-            e = ChatFriendSendMsg(self, request)
+            e = SendFriendMsg(self, request)
             self.hcat(e)
             return e.return_data.json()
 

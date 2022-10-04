@@ -5,7 +5,7 @@ from server import HCatServer
 from util import request_parse, get_user_data
 
 
-class FriendAdd:
+class AddFriend:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
@@ -72,7 +72,7 @@ class FriendAdd:
             return msg
 
 
-class FriendAgree:
+class AgreeFriendRequire:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
@@ -160,7 +160,7 @@ class FriendAgree:
             return msg
 
 
-class FriendDelete:
+class DeleteFriend:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
@@ -222,7 +222,7 @@ class FriendDelete:
             return msg
 
 
-class FriendGetFriendsList:
+class GetFriendsList:
     def __init__(self, server: HCatServer, req):
         self.username: str
         self.token: str
