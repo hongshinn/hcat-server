@@ -40,7 +40,7 @@ class GetDisplayName:
         if server.auth_db.exists(self.username):
             return ReturnData(ReturnData.OK).add('display_name', server.auth_db.get(self.username)['display_name'])
         else:
-            return ReturnData(ReturnData.OK, 'username not exists')
+            return ReturnData(ReturnData.NULL, 'username not exists')
 
 
 class GetTodoList:

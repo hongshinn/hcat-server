@@ -1,9 +1,7 @@
 HCatServer = None
-import json
 import threading
 from typing import Union, Tuple
 
-import pickledb
 from flask import Flask, request
 from flask_cors import CORS
 
@@ -12,6 +10,7 @@ from events.chat import *
 from events.friend import *
 from events.group import *
 from plugin_manager.manager import HCat
+from rpdb.database import *
 
 del HCatServer
 
@@ -29,10 +28,11 @@ class HCatServer:
         self.event_timeout = event_timeout
         self.get_todo_list_count = {}
         # 创建数据库对象
-        self.auth_db = pickledb.load('auth.db', True)
-        self.data_db = pickledb.load('data.db', True)
-        self.event_log_db = pickledb.load('event_log.db', True)
-        self.groups_db = pickledb.load('groups.db', True)
+
+        self.auth_db = RPDB('auth.db', True)
+        self.data_db = RPDB('data.db', True)
+        self.event_log_db = RPDB('event_log.db', True)
+        self.groups_db = RPDB('groups.db', True)
 
         # 创建锁
         self.data_db_lock = threading.Lock()
@@ -367,6 +367,30 @@ class HCatServer:
             self.hcat(e)
             return e.return_data.json()
 
+        @self.app.route('/group/agree_join_group_request', methods=['POST', 'GET'])
+        def agree_join_group_request():
+            e = AgreeJoinGroupRequest(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
+        @self.app.route('/group/get_group_members_list', methods=['POST', 'GET'])
+        def get_group_members_list():
+            e = GetGroupMembersList(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
+        @self.app.route('/group/get_group_settings', methods=['POST', 'GET'])
+        def get_group_settings():
+            e = GetGroupSettings(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
+        @self.app.route('/group/change_group_settings', methods=['POST', 'GET'])
+        def change_group_settings():
+            e = ChangeGroupSettings(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
     def start(self):
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
@@ -455,9 +479,9 @@ class HCatServer:
         else:
             return {}
 
-    def set_user_todo_list(self, username, ec):
+    def set_user_todo_list(self, username, ec: EventContainer):
         self.data_db_lock.acquire()
         data = self.get_user_data(username)
-        data['todo_list'].append(ec)
+        data['todo_list'].append(ec.json)
         self.data_db.set(username, data)
         self.data_db_lock.release()
