@@ -192,9 +192,13 @@ class AgreeJoinGroupRequest:
             self.event_json = server.event_log_db.get(self.rid)
             self.group_id = self.event_json['group_id']
             # 获取群租
+            server.groups_db_lock.acquire()
             group: Group = server.groups_db.get(self.group_id)
             if self.username != group.owner and self.username not in group.admin_list:
                 return ReturnData(ReturnData.ERROR, 'you do not have permission')
+            group.member_list.append(self.event_json['username'])
+            server.groups_db.set(self.group_id, group)
+            server.groups_db_lock.release()
 
             # 写入入群者的代办列表
             ec = EventContainer(server.event_log_db, server.event_log_db_lock)
@@ -214,5 +218,43 @@ class AgreeJoinGroupRequest:
             user_data['groups_list'][self.group_id] = {'remark': group.name, 'time': time.time()}
             server.data_db_lock.release()
             return ReturnData(ReturnData.OK)
+        else:
+            return msg
+
+
+class GetGroupMembersList:
+    def __init__(self, server: HCatServer, req):
+        self.username: str
+        self.token: str
+        self.group_id: str
+        self.server: HCatServer = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if 'username' not in req_data or 'token' not in req_data or 'group_id' not in req_data:
+            return ReturnData(ReturnData.ERROR, 'username token or group_id is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.group_id = req_data['group_id']
+
+        # 验证用户名与token
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            # 判断是否存在群聊
+            if not server.groups_db.exists(self.group_id):
+                return ReturnData(ReturnData.NULL, 'group not exists')
+
+            # 获取群租
+            group: Group = server.groups_db.get(self.group_id)
+
+            # 返回数据
+            if self.username in group.member_list:
+                return ReturnData(ReturnData.OK).add('data', group.member_list)
+            else:
+                return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')
         else:
             return msg
