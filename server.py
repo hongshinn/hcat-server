@@ -1,8 +1,5 @@
-import json
-
-from events.group import CreateGroup
-
 HCatServer = None
+import json
 import threading
 from typing import Union
 
@@ -13,6 +10,7 @@ from flask_cors import CORS
 from events.auth import *
 from events.chat import *
 from events.friend import *
+from events.group import *
 from plugin_manager.manager import HCat
 
 del HCatServer
@@ -363,6 +361,12 @@ class HCatServer:
             self.hcat(e)
             return e.return_data.json()
 
+        @self.app.route('/group/join_group', methods=['POST', 'GET'])
+        def join_group():
+            e = JoinGroup(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
     def start(self):
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
@@ -448,3 +452,10 @@ class HCatServer:
             return self.data_db.get(username)
         else:
             return {}
+
+    def set_user_todo_list(self, username, ec):
+        self.data_db_lock.acquire()
+        data = self.get_user_data(username)
+        data['todo_list'].append(ec)
+        self.data_db.set(username, data)
+        self.data_db_lock.release()

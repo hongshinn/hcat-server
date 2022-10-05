@@ -6,7 +6,7 @@ from typing import Union
 
 class HCat:
     def __init__(self):
-        self.event_dict: dict[object][list[FunctionType]] = {}
+        self.event_dict= {}
         self.plugin_list = []
 
     def event_handle(self, func):
@@ -60,6 +60,6 @@ class PluginConfig:
     def __init__(self):
         self.plugin_name: str
         self.description: str
-        self.author: Union[str, list[str]]
+        self.author: Union[str, list]
         self.depend = []
         self.version: str

@@ -1,7 +1,7 @@
 import time
 
 from containers import ReturnData, EventContainer
-from server import HCatServer, get_user_data
+from server import HCatServer
 from util import request_parse
 
 
@@ -36,12 +36,12 @@ class AddFriend:
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
             # 判断是否存在friends_list
-            if 'friends_list' not in get_user_data(server.data_db, self.username):
-                user_data = get_user_data(server.data_db, self.username)
+            if 'friends_list' not in server.get_user_data(self.username):
+                user_data = server.get_user_data(self.username)
                 user_data['friends_list'] = {}
                 server.data_db.set(self.username, user_data)
             # 判断是否已经是好友
-            if self.friend_username in get_user_data(server.data_db, self.username)['friends_list']:
+            if self.friend_username in server.get_user_data(self.username)['friends_list']:
                 return ReturnData(ReturnData.ERROR, 'already friend')
             else:
                 # 添加好友
@@ -141,7 +141,7 @@ class AgreeFriendRequire:
                                                               'time': time.time()}
 
                 # 获取用户状态
-                user_data = get_user_data(server.data_db, self.username)
+                user_data = server.get_user_data(self.username)
 
                 # 检测是否存在朋友列表
                 if 'friends_list' not in user_data:
@@ -205,7 +205,7 @@ class DeleteFriend:
 
             # 从好友列表删除
 
-            user_data = get_user_data(server.data_db, self.username)
+            user_data = server.get_user_data(self.username)
             if 'friends_list' in user_data:
                 # 从好友的好友列表删除
                 del user_data['friends_list'][self.friend_username]
@@ -243,7 +243,7 @@ class GetFriendsList:
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
             # 取用户数据
-            user_data = get_user_data(server.data_db, self.username)
+            user_data = server.get_user_data(self.username)
             # 判断并返回好友列表
             if 'friends_list' in user_data:
 

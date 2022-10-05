@@ -70,15 +70,20 @@ class Group:
         self.name = ''
         self.member_list = []
         self.member_data = {}
+        self.owner = ''
+        self.admin_list = []
+        '''
+        verification_method:
+        ac:administrator consent--需要管理同意
+        fr:free--自由进出
+        aw:answer question--需要回答问题
+        na:not allowed--不允许加入
+        '''
+        self.group_settings = {'verification_method': 'ac', 'question': '', 'answer': ''}
 
     def send_msg(self, server: HCatServer, username, msg):
         for i in self.member_list:
             if i != username:
-                member_data = server.data_db.get(i)
-
-                # 检测是否存在todo_list
-                if 'todo_list' not in member_data:
-                    member_data['todo_list'] = []
                 # 创建事件
                 ec = EventContainer(server.event_log_db, server.event_log_db_lock)
                 ec.add('type', 'group_msg'). \
@@ -88,6 +93,12 @@ class Group:
                     add('msg', msg). \
                     add('time', time.time())
                 ec.write()
+
                 # 将群聊消息事件写入成员的todo_list
+                server.data_db_lock.acquire()
+                member_data = server.get_user_data(username)
                 member_data['todo_list'].append(ec.json)
+                server.data_db.set(i, member_data)
+                server.data_db_lock.release()
+
                 del ec
