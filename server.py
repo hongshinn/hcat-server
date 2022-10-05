@@ -1,3 +1,7 @@
+import json
+
+from events.group import CreateGroup
+
 HCatServer = None
 import threading
 from typing import Union
@@ -10,7 +14,6 @@ from events.auth import *
 from events.chat import *
 from events.friend import *
 from plugin_manager.manager import HCat
-from util import *
 
 del HCatServer
 
@@ -31,12 +34,13 @@ class HCatServer:
         self.auth_db = pickledb.load('auth.db', True)
         self.data_db = pickledb.load('data.db', True)
         self.event_log_db = pickledb.load('event_log.db', True)
+        self.groups_db = pickledb.load('groups.db', True)
 
         # 创建锁
         self.data_db_lock = threading.Lock()
         self.event_log_db_lock = threading.Lock()
         self.auth_db_lock = threading.Lock()
-
+        self.groups_db_lock = threading.Lock()
         # 加载插件
         self.hcat = HCat()
         self.hcat.load_all_plugins()
@@ -353,6 +357,12 @@ class HCatServer:
             self.hcat(e)
             return e.return_data.json()
 
+        @self.app.route('/group/create_group', methods=['POST', 'GET'])
+        def create_group():
+            e = CreateGroup(self, request)
+            self.hcat(e)
+            return e.return_data.json()
+
     def start(self):
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
@@ -432,3 +442,9 @@ class HCatServer:
         user_data['todo_list'].append(ec.json)
         self.data_db.set(username, user_data)
         self.data_db_lock.release()
+
+    def get_user_data(self, username) -> json:
+        if self.data_db.exists(username):
+            return self.data_db.get(username)
+        else:
+            return {}

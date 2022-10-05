@@ -1,8 +1,5 @@
 import hashlib
-import json
 import random
-
-from pickledb import PickleDB
 
 
 def get_random_token(key_len=128):
@@ -30,8 +27,3 @@ def request_parse(req_data):
     return data
 
 
-def get_user_data(db: PickleDB, username) -> json:
-    if db.exists(username):
-        return db.get(username)
-    else:
-        return {}

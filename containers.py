@@ -1,5 +1,8 @@
+import time
+
 from flask import jsonify
 
+from server import HCatServer
 from util import get_random_token
 
 
@@ -59,3 +62,32 @@ class ReturnData:
 
     def __call__(self):
         return self.json_data
+
+
+class Group:
+    def __init__(self, group_id):
+        self.id = group_id
+        self.name = ''
+        self.member_list = []
+        self.member_data = {}
+
+    def send_msg(self, server: HCatServer, username, msg):
+        for i in self.member_list:
+            if i != username:
+                member_data = server.data_db.get(i)
+
+                # 检测是否存在todo_list
+                if 'todo_list' not in member_data:
+                    member_data['todo_list'] = []
+                # 创建事件
+                ec = EventContainer(server.event_log_db, server.event_log_db_lock)
+                ec.add('type', 'group_msg'). \
+                    add('rid', ec.rid). \
+                    add('username', username). \
+                    add('group_id', self.id). \
+                    add('msg', msg). \
+                    add('time', time.time())
+                ec.write()
+                # 将群聊消息事件写入成员的todo_list
+                member_data['todo_list'].append(ec.json)
+                del ec

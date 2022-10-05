@@ -1,8 +1,8 @@
 import re
 
 from containers import ReturnData
-from server import HCatServer
-from util import request_parse, get_user_data, salted_hash, get_random_token
+from server import HCatServer, get_user_data
+from util import request_parse, salted_hash, get_random_token
 
 
 class AuthenticateToken:

@@ -1,8 +1,8 @@
 import time
 
 from containers import ReturnData, EventContainer
-from server import HCatServer
-from util import request_parse, get_user_data
+from server import HCatServer, get_user_data
+from util import request_parse
 
 
 class AddFriend:
