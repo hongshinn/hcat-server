@@ -3,11 +3,14 @@ import os
 from types import FunctionType
 from typing import Union
 
+from server import HCatServer
+
 
 class HCat:
-    def __init__(self):
-        self.event_dict= {}
+    def __init__(self, server):
+        self.event_dict = {}
         self.plugin_list = []
+        self.server:HCatServer = server
 
     def event_handle(self, func):
         arg_len = len(func.__annotations__)

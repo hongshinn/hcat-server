@@ -1,7 +1,7 @@
 HCatServer = None
 import json
 import threading
-from typing import Union
+from typing import Union, Tuple
 
 import pickledb
 from flask import Flask, request
@@ -40,7 +40,7 @@ class HCatServer:
         self.auth_db_lock = threading.Lock()
         self.groups_db_lock = threading.Lock()
         # 加载插件
-        self.hcat = HCat()
+        self.hcat = HCat(self)
         self.hcat.load_all_plugins()
 
         @self.app.route('/', methods=['GET'])
@@ -395,7 +395,7 @@ class HCatServer:
             # 遍历用户
             for username in self.get_todo_list_count:
                 # 获取用户数据
-                user_data = get_user_data(self.data_db, username)
+                user_data = self.get_user_data(username)
                 # 判断
                 if self.get_todo_list_count[username] == 0:
                     user_data['status'] = 'offline'
@@ -408,7 +408,7 @@ class HCatServer:
             self.data_db_lock.release()
             time.sleep(30)
 
-    def authenticate_token(self, username: str, token: str) -> tuple[bool, Union[ReturnData, None]]:
+    def authenticate_token(self, username: str, token: str) -> Tuple[bool, Union[ReturnData, None]]:
         """
 
         :param username: str
@@ -416,14 +416,14 @@ class HCatServer:
         :return: tuple[bool, Union[dict, None]]
         """
         if self.data_db.exists(username):
-            if get_user_data(self.data_db, username)['token'] == token:
+            if self.get_user_data(username)['token'] == token:
                 return True, None
             else:
                 return False, ReturnData(ReturnData.ERROR, 'token error')
         else:
             return False, ReturnData(ReturnData.NULL, 'username not exists')
 
-    def send_message_box(self, msg_type=0, title='', username='', text='', path='\\', param_name='text'):
+    def send_message_box(self, msg_type=0, title='', username='', text='', path='\\', param_name='text') -> str:
         msg = 'message' if msg_type == 0 else 'question'
 
         ec = EventContainer(self.event_log_db, self.event_log_db_lock)
@@ -433,6 +433,7 @@ class HCatServer:
             add('title', title). \
             add('text', text). \
             add('path', path). \
+            add('username', username). \
             add('param_name', param_name). \
             add('time', time.time())
         ec.write()
@@ -446,6 +447,7 @@ class HCatServer:
         user_data['todo_list'].append(ec.json)
         self.data_db.set(username, user_data)
         self.data_db_lock.release()
+        return ec.rid
 
     def get_user_data(self, username) -> json:
         if self.data_db.exists(username):
