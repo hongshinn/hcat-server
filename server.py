@@ -405,25 +405,25 @@ class HCatServer:
         def send_group_msg():
             e = SendGroupMsg(self, request)
             self.hcat(e)
-            return e.return_data
+            return e.return_data.json()
 
         @self.app.route('/group/get_group_name/<id>', methods=['GET'])
         def get_group_name(group_id):
             e = GetGroupName(self, group_id)
             self.hcat(e)
-            return e.return_data
+            return e.return_data.json()
 
         @self.app.route('/group/get_groups_list', methods=['POST', 'GET'])
         def get_groups_list():
             e = GetGroupsList(self, request)
             self.hcat(e)
-            return e.return_data
+            return e.return_data.json()
 
         @self.app.route('/group/group_rename', methods=['POST', 'GET'])
         def groups_rename():
             e = GroupRename(self, request)
             self.hcat(e)
-            return e.return_data
+            return e.return_data.json()
 
     def start(self):
         threading.Thread(target=self._detection_online_thread).start()
