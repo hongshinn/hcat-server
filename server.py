@@ -414,7 +414,7 @@ class HCatServer:
             return e.return_data
 
         @self.app.route('/group/group_rename', methods=['POST', 'GET'])
-        def get_groups_list():
+        def groups_rename():
             e = GroupRename(self, request)
             self.hcat(e)
             return e.return_data
