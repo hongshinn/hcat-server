@@ -384,8 +384,9 @@ class SendGroupMsg:
             group: Group = server.groups_db.get(self.group_id)
 
             # 返回数据
-            if self.username in group.admin_list:
+            if self.username in group.member_list:
                 group.send_msg(server, self.username, self.msg)
+                return ReturnData(ReturnData.OK)
             else:
                 server.groups_db_lock.release()
                 return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')

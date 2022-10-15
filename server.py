@@ -522,6 +522,8 @@ class HCatServer:
     def set_user_todo_list(self, username, ec: EventContainer):
         self.data_db_lock.acquire()
         data = self.get_user_data(username)
+        if 'todo_list' not in data:
+            data['todo_list'] = []
         data['todo_list'].append(ec.json)
         self.data_db.set(username, data)
         self.data_db_lock.release()
