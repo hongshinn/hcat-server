@@ -85,7 +85,6 @@ class GetTodoList:
             return ReturnData(ReturnData.OK).add('data', res)
 
         else:
-            server.data_db_lock.release()
             return msg
 
 

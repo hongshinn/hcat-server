@@ -24,8 +24,7 @@ class HCat:
         self.event_dict[event_type].append(func)
 
     def __call__(self, e):
-        self.count += 1
-        print(self.count)
+
         if type(e) in self.event_dict:
             for f in self.event_dict[type(e)]:
                 f(e)
