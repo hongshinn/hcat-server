@@ -1,6 +1,5 @@
 import importlib
 import os
-from types import FunctionType
 from typing import Union
 
 from server import HCatServer
@@ -10,7 +9,8 @@ class HCat:
     def __init__(self, server):
         self.event_dict = {}
         self.plugin_list = []
-        self.server:HCatServer = server
+        self.server: HCatServer = server
+        self.count = 0
 
     def event_handle(self, func):
         arg_len = len(func.__annotations__)
@@ -24,6 +24,8 @@ class HCat:
         self.event_dict[event_type].append(func)
 
     def __call__(self, e):
+        self.count += 1
+        print(self.count)
         if type(e) in self.event_dict:
             for f in self.event_dict[type(e)]:
                 f(e)

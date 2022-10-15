@@ -28,7 +28,7 @@ class SendFriendMsg:
         self.token = req_data['token']
         self.friend_username = req_data['friend_username']
         self.msg = req_data['msg']
-        data = server.get_user_data( self.username)
+        data = server.get_user_data(self.username)
         # 判断是否为空
         if 'friends_list' not in data:
             data['friends_list'] = {}

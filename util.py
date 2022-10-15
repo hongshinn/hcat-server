@@ -27,3 +27,15 @@ def request_parse(req_data):
     return data
 
 
+def ins(obj: iter, collection) -> bool:
+    res = True
+    for i in obj:
+        res = res and (i in collection)
+    return res
+
+
+def not_ins(obj: iter, collection) -> bool:
+    res = True
+    for i in obj:
+        res = res and (i not in collection)
+    return res

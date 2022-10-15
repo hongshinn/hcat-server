@@ -82,6 +82,7 @@ class Group:
         self.group_settings = {'verification_method': 'ac', 'question': '', 'answer': ''}
 
     def send_msg(self, server: HCatServer, username, msg):
+
         for i in self.member_list:
             if i != username:
                 # 创建事件

@@ -70,7 +70,7 @@ class GetTodoList:
             else:
                 server.get_todo_list_count[self.username] = 0
 
-            data = server.get_user_data( self.username)
+            data = server.get_user_data(self.username)
             # 取todo_list
             if 'todo_list' in data:
                 # 取得结果
@@ -123,7 +123,7 @@ class Login:
             server.data_db_lock.acquire()
 
             # 读取数据
-            userdata = server.get_user_data( self.username)
+            userdata = server.get_user_data(self.username)
 
             # 写入字典
             userdata['status'] = 'online'
@@ -167,7 +167,7 @@ class Logout:
         if auth_status:
             # 写入数据库
             server.data_db_lock.acquire()
-            userdata = server.get_user_data( self.username)
+            userdata = server.get_user_data(self.username)
             userdata['status'] = 'offline'
             userdata['token'] = ''
             server.data_db.set(self.username, userdata)
@@ -233,7 +233,7 @@ class Status:
         # 判断用户名是否存在
         if server.data_db.exists(self.username):
 
-            return ReturnData(ReturnData.OK).add('user_status', server.get_user_data( self.username)['status'])
+            return ReturnData(ReturnData.OK).add('user_status', server.get_user_data(self.username)['status'])
         else:
 
             return ReturnData(ReturnData.NULL, 'username not exists')
