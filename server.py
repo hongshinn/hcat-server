@@ -407,7 +407,7 @@ class HCatServer:
             self.hcat(e)
             return e.return_data.json()
 
-        @self.app.route('/group/get_group_name/<id>', methods=['GET'])
+        @self.app.route('/group/get_group_name/<group_id>', methods=['GET'])
         def get_group_name(group_id):
             e = GetGroupName(self, group_id)
             self.hcat(e)
