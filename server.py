@@ -1,3 +1,5 @@
+import logging
+
 from config_loader import Config
 
 HCatServer = None
@@ -15,6 +17,10 @@ from plugin_manager.manager import HCat
 from rpdb.database import *
 
 del HCatServer
+
+
+def log_output(logger=__name__, log_level=logging.INFO, text=''):
+    logging.getLogger(__name__).log(log_level, text)
 
 
 class HCatServer:

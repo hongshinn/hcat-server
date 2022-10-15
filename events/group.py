@@ -400,13 +400,16 @@ class GetGroupName:
         self.return_data = self._run(server)
 
     def _run(self, server):
-        # 判断用户名是否存在
+
         server.groups_db_lock.acquire()
-        # 获取群租
-        group: Group = server.groups_db.get(self.group_id)
-        # 返回数据
-        server.groups_db_lock.release()
-        return group.name
+        if server.groups_db.exists(self.group_id):
+            # 获取群租
+            group: Group = server.groups_db.get(self.group_id)
+            # 返回数据
+            server.groups_db_lock.release()
+            return ReturnData(ReturnData.OK).add('group_name', group.name)
+        else:
+            return ReturnData(ReturnData.NULL, 'group rent does not exist')
 
 
 class GetGroupsList:
@@ -432,7 +435,7 @@ class GetGroupsList:
             # 取用户数据
             user_data = server.get_user_data(self.username)
 
-            # 判断并返回好友列表
+            # 判断并返回群租列表
             if 'groups_list' in user_data:
                 return ReturnData(ReturnData.OK).add('data', user_data['groups_list'])
             else:
