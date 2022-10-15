@@ -409,6 +409,11 @@ class HCatServer:
             self.hcat(e)
             return e.return_data
 
+        @self.app.route('/group/group_rename', methods=['POST', 'GET'])
+        def get_groups_list():
+            e = GroupRename(self, request)
+            self.hcat(e)
+            return e.return_data
     def start(self):
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()

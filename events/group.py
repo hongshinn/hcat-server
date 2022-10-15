@@ -440,3 +440,41 @@ class GetGroupsList:
 
         else:
             return msg
+
+
+class GroupRename:
+    def __init__(self, server: HCatServer, req):
+        self.username: str
+        self.token: str
+        self.group_name: str
+        self.group_id: str
+        self.server: HCatServer = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if not ins(['username', 'token', 'group_id', 'group_name'], req_data):
+            return ReturnData(ReturnData.ERROR, 'username token group_id or group_name is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.group_id = req_data['group_id']
+        self.group_name = req_data['group_name']
+
+        # 验证用户名与token
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            server.groups_db_lock.acquire()
+            # 实例化群聊
+            group: Group = server.groups_db.get(self.group_id)
+            if not group.permission_match(self.username):
+                server.groups_db_lock.release()
+                return ReturnData(ReturnData.ERROR, 'you do not have permission')
+            group.name = self.group_name
+            server.groups_db.set(self.group_id, group)
+            server.groups_db_lock.release()
+            return ReturnData(ReturnData.OK, '')
+        else:
+            return msg

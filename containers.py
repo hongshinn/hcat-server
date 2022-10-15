@@ -65,6 +65,9 @@ class ReturnData:
 
 
 class Group:
+    Permission_OWNER = 0
+    Permission_ADMIN = 1
+
     def __init__(self, group_id):
         self.id = group_id
         self.name = ''
@@ -103,3 +106,9 @@ class Group:
                 server.data_db_lock.release()
 
                 del ec
+
+    def permission_match(self, username, permission=Permission_ADMIN):
+        if permission == self.Permission_ADMIN:
+            return username == self.owner or username in self.admin_list
+        elif permission == self.Permission_OWNER:
+            return username == self.owner
