@@ -391,3 +391,19 @@ class SendGroupMsg:
                 return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')
         else:
             return msg
+
+
+class GetGroupName:
+    def __init__(self, server, group_id):
+        self.group_id = group_id
+        self.server = server
+        self.return_data = self._run(server)
+
+    def _run(self, server):
+        # 判断用户名是否存在
+        server.groups_db_lock.acquire()
+        # 获取群租
+        group: Group = server.groups_db.get(self.group_id)
+        # 返回数据
+        server.groups_db_lock.release()
+        self.return_data = group.name

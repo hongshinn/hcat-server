@@ -132,7 +132,6 @@ class Login:
             server.data_db_lock.release()
 
             # 返回结果
-
             return ReturnData(ReturnData.OK, 'login success').add('token', token)
         else:
 
