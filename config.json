@@ -3,5 +3,7 @@
   "Port": 8080,
   "GCTime": 30,
   "EventTimeout": 604800,
-  "MainPageContent": "<meta http-equiv=\"refresh\" content=\"0;url=https://github.com/hongshinn/hcat-server\" >"
+  "MainPageContent": "<meta http-equiv=\"refresh\" content=\"0;url=https://github.com/hongshinn/hcat-server\" >",
+  "SSLCert": null,
+  "SSLKey": null
 }

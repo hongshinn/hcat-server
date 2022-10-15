@@ -9,3 +9,5 @@ class Config:
         self.GCTime = config['GCTime']
         self.EventTimeout = config['EventTimeout']
         self.MainPageContent = config['MainPageContent']
+        self.SSLCert = config['SSLCert']
+        self.SSLKey = config['SSLKey']

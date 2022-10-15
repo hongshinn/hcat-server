@@ -1,3 +1,5 @@
+from config_loader import Config
+
 HCatServer = None
 import threading
 from typing import Union, Tuple
@@ -16,16 +18,18 @@ del HCatServer
 
 
 class HCatServer:
-    def __init__(self, address, gc_time, main_page_content, event_timeout):
+
+    def __init__(self, config: Config):
         # 初始化Flask对象
         app = Flask(__name__)
         CORS(app)
         self.app = app
+        self.config = config
 
         # 初始化变量
-        self.address = address
-        self.gc_time = gc_time
-        self.event_timeout = event_timeout
+        self.address = (config.IP, config.Port)
+        self.gc_time = config.GCTime
+        self.event_timeout = config.EventTimeout
         self.get_todo_list_count = {}
         # 创建数据库对象
 
@@ -45,7 +49,7 @@ class HCatServer:
 
         @self.app.route('/', methods=['GET'])
         def main_page():
-            return main_page_content
+            return config.MainPageContent
 
         @self.app.route('/auth/logout', methods=['GET', 'POST'])
         def logout():
@@ -414,10 +418,15 @@ class HCatServer:
             e = GroupRename(self, request)
             self.hcat(e)
             return e.return_data
+
     def start(self):
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
-        self.app.run(host=self.address[0], port=self.address[1])
+        if self.config.SSLCert is not None:
+            self.app.run(host=self.address[0], port=self.address[1],
+                         ssl_context=(self.config.SSLCert, self.config.SSLKey))
+        else:
+            self.app.run(host=self.address[0], port=self.address[1])
 
     def _event_log_clear_thread(self):
 
