@@ -406,4 +406,37 @@ class GetGroupName:
         group: Group = server.groups_db.get(self.group_id)
         # 返回数据
         server.groups_db_lock.release()
-        self.return_data = group.name
+        return group.name
+
+
+class GetGroupsList:
+    def __init__(self, server: HCatServer, req):
+        self.username: str
+        self.token: str
+        self.server = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if 'username' not in req_data or 'token' not in req_data:
+            return ReturnData(ReturnData.ERROR, 'username or token is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+
+        # 验证用户名与token
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            # 取用户数据
+            user_data = server.get_user_data(self.username)
+
+            # 判断并返回好友列表
+            if 'groups_list' in user_data:
+                return ReturnData(ReturnData.OK).add('data', user_data['groups_list'])
+            else:
+                return ReturnData(ReturnData.OK).add('data', {})
+
+        else:
+            return msg
