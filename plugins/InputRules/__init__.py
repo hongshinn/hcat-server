@@ -8,9 +8,13 @@ def main(hcat: HCat, workspace: str):
     def send_msg(e: SendFriendMsg):
         if e.msg == '':
             e.return_data = ReturnData(ReturnData.ERROR, 'input content cannot be empty')
-            del_list = []
             e.cancel = True
-        pass
+
+    @hcat.event_handle
+    def send_group_msg(e: SendGroupMsg):
+        if e.msg == '':
+            e.return_data = ReturnData(ReturnData.ERROR, 'input content cannot be empty')
+            e.cancel = True
 
 
 class Config(PluginConfig):
@@ -20,4 +24,4 @@ class Config(PluginConfig):
         self.description = 'This is a plug-in that restricts input'
         self.author = 'hsn'
         self.depend = []
-        self.version = '1.0.0'
+        self.version = '1.0.1'
