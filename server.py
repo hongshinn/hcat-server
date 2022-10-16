@@ -39,10 +39,10 @@ class HCatServer:
         self.get_todo_list_count = {}
         # 创建数据库对象
 
-        self.auth_db = RPDB('data\\auth', slice_multiplier=2)
-        self.data_db = RPDB('data\\data', slice_multiplier=2)
-        self.event_log_db = RPDB('data\\event_log', slice_multiplier=2)
-        self.groups_db = RPDB('data\\groups', slice_multiplier=2)
+        self.auth_db = RPDB(os.path.join(os.getcwd(), 'data', 'auth'), slice_multiplier=2)
+        self.data_db = RPDB(os.path.join(os.getcwd(), 'data', 'data'), slice_multiplier=2)
+        self.event_log_db = RPDB(os.path.join(os.getcwd(), 'data', 'event_log'), slice_multiplier=2)
+        self.groups_db = RPDB(os.path.join(os.getcwd(), 'data', 'groups'), slice_multiplier=2)
 
         # 创建锁
         self.data_db_lock = threading.Lock()
