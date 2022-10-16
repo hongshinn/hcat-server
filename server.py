@@ -363,7 +363,7 @@ class HCatServer:
             """
             e = SendFriendMsg(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/create_group', methods=['POST', 'GET'])
         def create_group():

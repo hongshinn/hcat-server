@@ -69,6 +69,9 @@ class SendFriendMsg:
             self.server.data_db_lock.release()
 
             self.return_data = ReturnData(ReturnData.OK)
+
+        if self.return_data is None:
+            self.return_data = ReturnData(ReturnData.ERROR)
         return self.return_data.json()
 
 
