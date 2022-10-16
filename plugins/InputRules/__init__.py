@@ -7,7 +7,7 @@ def main(hcat: HCat, workspace: str):
     @hcat.event_handle
     def send_msg(e: SendFriendMsg):
         if e.msg == '':
-            e.return_data(ReturnData(ReturnData.ERROR, 'input content cannot be empty'))
+            e.return_data = ReturnData(ReturnData.ERROR, 'input content cannot be empty')
             del_list = []
             e.cancel = True
         pass
