@@ -12,6 +12,7 @@ class SendFriendMsg:
         self.server = server
         self.friend_username: str
         self.msg: str
+        self.cancel = True
         self.return_data = self._run(server, req)
 
     def _run(self, server: HCatServer, request):
@@ -92,6 +93,7 @@ class SendGroupMsg:
         # 获取请求参数
         self.username = req_data['username']
         self.token = req_data['token']
+        self.cancel = True
         self.group_id = req_data['group_id']
         self.msg = req_data['msg']
 
@@ -102,16 +104,23 @@ class SendGroupMsg:
             if not server.groups_db.exists(self.group_id):
                 return ReturnData(ReturnData.NULL, 'group not exists')
 
-            server.groups_db_lock.acquire()
             # 获取群租
             group: Group = server.groups_db.get(self.group_id)
 
             # 返回数据
             if self.username in group.member_list:
-                group.send_msg(server, self.username, self.msg)
+                self.cancel = False
                 return ReturnData(ReturnData.OK)
             else:
-                server.groups_db_lock.release()
                 return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')
         else:
             return msg
+
+    def e_return(self):
+        if not self.cancel:
+            self.server.groups_db_lock.acquire()
+            # 获取群租
+            group: Group = self.server.groups_db.get(self.group_id)
+            group.send_msg(self.server, self.username, self.msg)
+            self.server.groups_db_lock.release()
+        return self.return_data
