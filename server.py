@@ -401,7 +401,7 @@ class HCatServer:
             self.hcat(e)
             return e.return_data.json()
 
-        @self.app.route('/group/send_group_msg', methods=['POST', 'GET'])
+        @self.app.route('/chat/group/send_msg', methods=['POST', 'GET'])
         def send_group_msg():
             e = SendGroupMsg(self, request)
             self.hcat(e)
