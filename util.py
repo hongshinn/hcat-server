@@ -11,7 +11,7 @@ def salted_hash(data, salt, additional_string=None):
     hash_salt = salt
     if additional_string is not None:
         hash_salt += hashlib.sha1(additional_string.encode('utf8')).hexdigest()
-    return hashlib.sha1((data + '1145').encode('utf8')).hexdigest()
+    return hashlib.sha1((data + hash_salt).encode('utf8')).hexdigest()
 
 
 def request_parse(req_data):

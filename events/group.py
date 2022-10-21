@@ -9,10 +9,9 @@ from util import *
 class CreateGroup(Event):
     def __init__(self, server: HCatServer, req):
         super().__init__()
-
         self.server: HCatServer = server
-        self.return_data = self._run(server, req)
         self.cancel = True
+        self.return_data = self._run(server, req)
 
     def _run(self, server: HCatServer, request):
         # 获取请求数据
@@ -47,7 +46,6 @@ class CreateGroup(Event):
             self.group.owner = self.username
 
             self.cancel = False
-
             return ReturnData(ReturnData.OK, '').add('group_id', self.group_id)
         else:
             return msg
@@ -74,8 +72,8 @@ class JoinGroup(Event):
     def __init__(self, server: HCatServer, req):
         super().__init__()
         self.server: HCatServer = server
-        self.return_data = self._run(server, req)
         self.cancel = True
+        self.return_data = self._run(server, req)
 
     def _run(self, server: HCatServer, request):
         # 获取请求数据
@@ -189,8 +187,8 @@ class AgreeJoinGroupRequest(Event):
         super().__init__()
 
         self.server: HCatServer = server
-        self.return_data = self._run(server, req)
         self.cancel = True
+        self.return_data = self._run(server, req)
 
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)

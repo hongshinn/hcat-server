@@ -69,8 +69,10 @@ class GetTodoList(Event):
         if auth_status:
             # 在线判断计次
             server.data_db_lock.acquire()
-            server.get_todo_list_count[self.username] = 0 if self.username in server.get_todo_list_count else \
-                server.get_todo_list_count[self.username] + 1
+            if self.username in server.get_todo_list_count:
+                server.get_todo_list_count[self.username] += 1
+            else:
+                server.get_todo_list_count[self.username] = 0
 
             data = server.get_user_data(self.username)
 
