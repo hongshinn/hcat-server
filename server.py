@@ -427,8 +427,11 @@ class HCatServer:
             return e.e_return()
 
     def start(self):
+        # 多线程启动
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
+
+        # 判断是否ssl
         if self.config.SSLCert is not None:
             self.app.run(host=self.address[0], port=self.address[1],
                          ssl_context=(self.config.SSLCert, self.config.SSLKey))
@@ -438,16 +441,25 @@ class HCatServer:
     def _event_log_clear_thread(self):
 
         while True:
-            i = 0
+            # 上锁
             self.event_log_db_lock.acquire()
+            # 初始化变量
+            i = 0
             del_list = []
+            # 遍历事件列表
             for j in self.event_log_db.getall():
+                # 获取事件事件
                 event_time = self.event_log_db.get(j)['time']
+                # 检查是否超时
                 if time.time() - event_time >= self.event_timeout:
                     i += 1
+                    # 加入待删除
                     del_list.append(j)
+            # 删除事件
             [self.event_log_db.rem(j) for j in del_list]
+            # 解锁
             self.event_log_db_lock.release()
+            # 输出
             if i > 0:
                 print('Cleaned up {} expired events.'.format(i))
             time.sleep(self.gc_time)
@@ -473,24 +485,33 @@ class HCatServer:
 
     def authenticate_token(self, username: str, token: str) -> Tuple[bool, Union[ReturnData, None]]:
         """
-
         :param username: str
         :param token: str
         :return: tuple[bool, Union[dict, None]]
         """
-        if self.data_db.exists(username):
-            if self.get_user_data(username)['token'] == token:
+        if self.data_db.exists(username):  # 检查数据库中是否存在用户
+            if self.get_user_data(username)['token'] == token:  # 检查token是否正确
                 return True, None
             else:
-
                 return False, ReturnData(ReturnData.ERROR, 'token error')
-
         else:
             return False, ReturnData(ReturnData.NULL, 'username not exists')
 
     def send_message_box(self, msg_type=0, title='', username='', text='', path='\\', param_name='text') -> str:
+        """
+        :param msg_type: int
+        :param title: str
+        :param username: str
+        :param text: str
+        :param path: str
+        :param param_name: str
+        :return: str
+        """
+
+        # 设置信息类型
         msg = 'message' if msg_type == 0 else 'question'
 
+        # 创建事件容器
         ec = EventContainer(self.event_log_db, self.event_log_db_lock)
         ec. \
             add('type', msg). \
@@ -502,29 +523,36 @@ class HCatServer:
             add('param_name', param_name). \
             add('time', time.time())
         ec.write()
-
-        self.data_db_lock.acquire()
-        user_data = self.data_db.get(username)
-        # 检测是否存在todo_list
-        if 'todo_list' not in user_data:
-            user_data['todo_list'] = []
-
-        user_data['todo_list'].append(ec.json)
-        self.data_db.set(username, user_data)
-        self.data_db_lock.release()
+        # 写入用户待办列表
+        self.set_user_todo_list(username, ec)
         return ec.rid
 
-    def get_user_data(self, username) -> json:
-        if self.data_db.exists(username):
+    def get_user_data(self, username: str) -> dict:
+        """
+        :param username: str
+        :return: dict
+        """
+        if self.data_db.exists(username):  # 检查是否存在用户
             return self.data_db.get(username)
         else:
             return {}
 
-    def set_user_todo_list(self, username, ec: EventContainer):
+    def set_user_todo_list(self, username: str, ec: EventContainer):
+        """
+        :param username: str
+        :param ec: EventContainer
+        """
+
+        # 上锁
         self.data_db_lock.acquire()
+        # 取用户数据
         data = self.get_user_data(username)
+        # 检查是否存在待办列表
         if 'todo_list' not in data:
             data['todo_list'] = []
+        # 加入事件
         data['todo_list'].append(ec.json)
+        # 写入数据库
         self.data_db.set(username, data)
+        # 解锁
         self.data_db_lock.release()
