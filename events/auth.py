@@ -1,14 +1,15 @@
 import re
 
 from containers import ReturnData
+from events.event import Event
 from server import HCatServer
 from util import request_parse, salted_hash, get_random_token
 
 
-class AuthenticateToken:
+class AuthenticateToken(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
+        super().__init__()
+
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -30,8 +31,9 @@ class AuthenticateToken:
             return msg
 
 
-class GetDisplayName:
+class GetDisplayName(Event):
     def __init__(self, server, username):
+        super().__init__()
         self.username = username
         self.server = server
         self.return_data = self._run(server)
@@ -43,10 +45,10 @@ class GetDisplayName:
             return ReturnData(ReturnData.NULL, 'username not exists')
 
 
-class GetTodoList:
+class GetTodoList(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
+        super().__init__()
+
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -88,10 +90,11 @@ class GetTodoList:
             return msg
 
 
-class Login:
+class Login(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.password: str
+        super().__init__()
+
+        self.cancel = True
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -114,34 +117,34 @@ class Login:
         if server.auth_db.get(self.username)['password'] == salted_hash(self.password,
                                                                         server.auth_db.get(self.username)['salt'],
                                                                         self.username):
-
+            self.cancel = False
             # 生成随机密钥
-            token = get_random_token()
-
-            # 写入数据库
-            server.data_db_lock.acquire()
-
-            # 读取数据
-            userdata = server.get_user_data(self.username)
-
-            # 写入字典
-            userdata['status'] = 'online'
-            userdata['token'] = token
-            # 写出
-            server.data_db.set(self.username, userdata)
-            server.data_db_lock.release()
+            self.token = get_random_token()
 
             # 返回结果
-            return ReturnData(ReturnData.OK, 'login success').add('token', token)
+            return ReturnData(ReturnData.OK, 'login success').add('token', self.token)
         else:
 
             return ReturnData(ReturnData.ERROR, 'username or password is incorrect')
 
+    def _return(self):
+        server = self.server
+        server.data_db_lock.acquire()
 
-class Logout:
+        # 读取数据
+        userdata = server.get_user_data(self.username)
+
+        # 写入字典
+        userdata['status'] = 'online'
+        userdata['token'] = self.token
+        # 写出
+        server.data_db.set(self.username, userdata)
+        server.data_db_lock.release()
+
+
+class Logout(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
+        super().__init__()
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -177,11 +180,11 @@ class Logout:
             return msg
 
 
-class Register:
+class Register(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.password: str
-        self.display_name: str
+        super().__init__()
+
+        self.cancel = True
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -211,18 +214,23 @@ class Register:
 
             return ReturnData(ReturnData.ERROR, 'username already exists')
         else:
-            # 写入数据库
-            salt = get_random_token(16)
-
-            server.auth_db.set(self.username, {'password': salted_hash(self.password, salt, self.username),
-                                               'salt': salt,
-                                               'display_name': self.display_name})
+            self.cancel = False
 
             return ReturnData(ReturnData.OK, 'register success')
 
+    def _return(self):
+        server = self.server
+        # 写入数据库
+        salt = get_random_token(16)
 
-class Status:
+        server.auth_db.set(self.username, {'password': salted_hash(self.password, salt, self.username),
+                                           'salt': salt,
+                                           'display_name': self.display_name})
+
+
+class Status(Event):
     def __init__(self, server, username):
+        super().__init__()
         self.username = username
         self.server = server
         self.return_data = self._run(server)
@@ -237,11 +245,11 @@ class Status:
             return ReturnData(ReturnData.NULL, 'username not exists')
 
 
-class Rename:
+class Rename(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
-        self.display_name: str
+        super().__init__()
+
+        self.cancel = True
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -258,21 +266,26 @@ class Rename:
         # 验证密钥
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
-            auth_data = server.auth_db.get(self.username)
-            self.former_name = auth_data['display_name']
-            auth_data['display_name'] = self.display_name
-            server.auth_db.set(self.username, auth_data)
+            self.cancel = False
             return ReturnData(ReturnData.OK)
         else:
             return msg
 
+    def _return(self):
+        server = self.server
+        server.data_db_lock.acquire()
+        auth_data = server.auth_db.get(self.username)
+        self.former_name = auth_data['display_name']
+        auth_data['display_name'] = self.display_name
+        server.auth_db.set(self.username, auth_data)
+        server.data_db_lock.release()
 
-class ChangePassword:
+
+class ChangePassword(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
-        self.password: str
-        self.new_password: str
+        super().__init__()
+
+        self.cancel = True
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -304,13 +317,7 @@ class ChangePassword:
                 if len(self.new_password) < 6:
                     return ReturnData(ReturnData.ERROR, 'password is too short')
 
-                salt = get_random_token(16)
-                server.auth_db_lock.acquire()
-                auth_data = server.auth_db.get(self.username)
-                auth_data['password'] = salted_hash(self.new_password, salt, self.username)
-                auth_data['salt'] = salt
-                server.auth_db.set(self.username, auth_data)
-                server.auth_db_lock.release()
+                self.cancel = False
 
                 # 返回结果
 
@@ -320,3 +327,13 @@ class ChangePassword:
                 return ReturnData(ReturnData.ERROR, 'old password is incorrect')
         else:
             return msg
+
+    def _return(self):
+        server = self.server
+        salt = get_random_token(16)
+        server.auth_db_lock.acquire()
+        auth_data = server.auth_db.get(self.username)
+        auth_data['password'] = salted_hash(self.new_password, salt, self.username)
+        auth_data['salt'] = salt
+        server.auth_db.set(self.username, auth_data)
+        server.auth_db_lock.release()

@@ -7,7 +7,6 @@ def main(hcat: HCat, workspace: str):
     @hcat.event_handle
     def auth_logout(e: Logout):
         # e.return_data = ReturnData(ReturnData.ERROR, '测试')
-
         pass
 
 

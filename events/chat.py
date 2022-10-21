@@ -1,17 +1,17 @@
 import time
 
 from containers import ReturnData, EventContainer, Group
+from events.event import Event
 from server import HCatServer
 from util import request_parse, ins
 
 
-class SendFriendMsg:
+class SendFriendMsg(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
+        super().__init__()
+
         self.server = server
-        self.friend_username: str
-        self.msg: str
+
         self.cancel = True
         self.return_data = self._run(server, req)
 
@@ -46,7 +46,7 @@ class SendFriendMsg:
             server.data_db_lock.release()
             return rt_msg
 
-    def e_return(self):
+    def _return(self):
         if not self.cancel:
             self.server.data_db_lock.acquire()
             friend_data = self.server.data_db.get(self.friend_username)
@@ -73,14 +73,12 @@ class SendFriendMsg:
 
         if self.return_data is None:
             self.return_data = ReturnData(ReturnData.ERROR)
-        return self.return_data.json()
 
 
-class SendGroupMsg:
+class SendGroupMsg(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
-        self.group_id: str
+        super().__init__()
+
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
 
@@ -116,11 +114,10 @@ class SendGroupMsg:
         else:
             return msg
 
-    def e_return(self):
+    def _return(self):
         if not self.cancel:
             self.server.groups_db_lock.acquire()
             # 获取群租
             group: Group = self.server.groups_db.get(self.group_id)
             group.send_msg(self.server, self.username, self.msg)
             self.server.groups_db_lock.release()
-        return self.return_data

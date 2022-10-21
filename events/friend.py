@@ -1,15 +1,15 @@
 import time
 
 from containers import ReturnData, EventContainer
+from events.event import Event
 from server import HCatServer
 from util import request_parse
 
 
-class AddFriend:
+class AddFriend(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
-        self.friend_username: str
+        super().__init__()
+
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -72,11 +72,11 @@ class AddFriend:
             return msg
 
 
-class AgreeFriendRequire:
+class AgreeFriendRequire(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
-        self.rid: str
+        super().__init__()
+
+        self.cancel = True
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -92,7 +92,7 @@ class AgreeFriendRequire:
         self.rid = req_data['rid']
 
         if server.event_log_db.exists(self.rid):
-            friend_username = server.event_log_db.get(self.rid)['username']
+            self.friend_username = server.event_log_db.get(self.rid)['username']
             server.event_log_db_lock.acquire()
             server.event_log_db.rem(self.rid)
             server.event_log_db_lock.release()
@@ -101,70 +101,68 @@ class AgreeFriendRequire:
             return ReturnData(ReturnData.NULL, 'event not exists')
 
         # 判断对象是否存在
-        if not server.data_db.exists(friend_username):
-            return ReturnData(ReturnData.NULL, 'friend not exists')
+        if not server.data_db.exists(self.friend_username):
+            return ReturnData(ReturnData.NULL, 'user not exists')
 
-        server.data_db_lock.acquire()
         # 验证用户名与token
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
 
             # 判断是否已经是好友
-            if 'friends_list' in server.data_db.get(friend_username) and self.username in \
-                    server.data_db.get(friend_username)['friends_list']:
+            if 'friends_list' in server.data_db.get(self.friend_username) and self.username in \
+                    server.data_db.get(self.friend_username)['friends_list']:
 
                 return ReturnData(ReturnData.ERROR, 'already friend')
             else:
-                # 获取好友数据
-                friend_data = server.data_db.get(friend_username)
-                # 检测是否存在todo_list
-                if 'todo_list' not in friend_data:
-                    friend_data['todo_list'] = []
-                # 创建事件
-                ec = EventContainer(server.event_log_db, server.event_log_db_lock)
-                ec. \
-                    add('type', 'friend_agree'). \
-                    add('rid', ec.rid). \
-                    add('username', self.username). \
-                    add('time', time.time())
-                ec.write()
-                # 将同意申请加入朋友的todo_list
-                friend_data['todo_list'].append(ec.json)
-
-                # 检测是否存在朋友列表
-                if 'friends_list' not in friend_data:
-                    friend_data['friends_list'] = {}
-
-                # 加入朋友列表
-                display_name = server.auth_db.get(self.username)['display_name']
-                friend_data['friends_list'][self.username] = {'nick': display_name,
-                                                              'time': time.time()}
-
-                # 获取用户状态
-                user_data = server.get_user_data(self.username)
-
-                # 检测是否存在朋友列表
-                if 'friends_list' not in user_data:
-                    user_data['friends_list'] = {}
-
-                # 加入朋友列表
-                friend_display_name = server.auth_db.get(friend_username)['display_name']
-                user_data['friends_list'][friend_username] = {'nick': friend_display_name,
-                                                              'time': time.time()}
-                server.data_db.set(friend_username, friend_data)
-                server.data_db.set(self.username, user_data)
-                server.data_db_lock.release()
+                self.cancel = False
                 return ReturnData(ReturnData.OK, 'agree friend success')
         else:
-            server.data_db_lock.release()
             return msg
 
+    def _return(self):
+        server = self.server
+        # 创建事件
+        ec = EventContainer(server.event_log_db, server.event_log_db_lock)
+        ec. \
+            add('type', 'friend_agree'). \
+            add('rid', ec.rid). \
+            add('username', self.username). \
+            add('time', time.time())
+        ec.write()
+        # 将同意申请加入朋友的todo_list
+        server.set_user_todo_list(self.username, ec)
+        server.data_db_lock.acquire()
+        friend_data = server.data_db.get(self.friend_username)
+        # 检测是否存在朋友列表
+        if 'friends_list' not in friend_data:
+            friend_data['friends_list'] = {}
 
-class DeleteFriend:
+        # 加入朋友列表
+        display_name = server.auth_db.get(self.username)['display_name']
+        friend_data['friends_list'][self.username] = {'nick': display_name,
+                                                      'time': time.time()}
+
+        # 获取用户状态
+        user_data = server.get_user_data(self.username)
+
+        # 检测是否存在朋友列表
+        if 'friends_list' not in user_data:
+            user_data['friends_list'] = {}
+
+        # 加入朋友列表
+        friend_display_name = server.auth_db.get(self.friend_username)['display_name']
+        user_data['friends_list'][self.friend_username] = {'nick': friend_display_name,
+                                                           'time': time.time()}
+        server.data_db.set(self.friend_username, friend_data)
+        server.data_db.set(self.username, user_data)
+        server.data_db_lock.release()
+
+
+class DeleteFriend(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
-        self.friend_username: str
+        super().__init__()
+
+        self.cancel = True
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -178,54 +176,57 @@ class DeleteFriend:
         self.username = req_data['username']
         self.token = req_data['token']
         self.friend_username = req_data['friend_username']
-        # 判断用户名是否存在
-        server.data_db_lock.acquire()
+
         # 验证用户名与token
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
-            friend_data = server.data_db.get(self.friend_username)
-
-            # 检测是否存在todo_list
-            if 'todo_list' not in friend_data:
-                friend_data['todo_list'] = []
-            # 创建事件
-            ec = EventContainer(server.event_log_db, server.event_log_db_lock)
-            ec.add('type', 'friend_deleted').add('rid', ec.rid).add('username', self.username).add('time', time.time())
-            ec.write()
-            # 将好友删除事件加入朋友的todo_list
-            friend_data['todo_list'].append(ec.json)
-            del ec
-            if 'friends_list' in friend_data:
-                # 从好友的好友列表删除
-                del friend_data['friends_list'][self.username]
-                server.data_db.set(self.friend_username, friend_data)
-            else:
-                friend_data['friends_list'] = {}
-                server.data_db.set(self.friend_username, friend_data)
-
-            # 从好友列表删除
-
-            user_data = server.get_user_data(self.username)
-            if 'friends_list' in user_data:
-                # 从好友的好友列表删除
-                del user_data['friends_list'][self.friend_username]
-
-            else:
-                user_data['friends_list'] = {}
-            server.data_db.set(self.username, user_data)
-
-            server.data_db_lock.release()
+            self.cancel = False
             return ReturnData(ReturnData.OK)
 
         else:
-            server.data_db_lock.release()
+
             return msg
 
+    def _return(self):
+        server = self.server
+        friend_data = server.data_db.get(self.friend_username)
 
-class GetFriendsList:
+        # 检测是否存在todo_list
+        if 'todo_list' not in friend_data:
+            friend_data['todo_list'] = []
+        # 创建事件
+        ec = EventContainer(server.event_log_db, server.event_log_db_lock)
+        ec.add('type', 'friend_deleted').add('rid', ec.rid).add('username', self.username).add('time', time.time())
+        ec.write()
+        # 将好友删除事件加入朋友的todo_list
+        friend_data['todo_list'].append(ec.json)
+        del ec
+        if 'friends_list' in friend_data:
+            # 从好友的好友列表删除
+            del friend_data['friends_list'][self.username]
+            server.data_db.set(self.friend_username, friend_data)
+        else:
+            friend_data['friends_list'] = {}
+            server.data_db.set(self.friend_username, friend_data)
+
+        # 从好友列表删除
+
+        user_data = server.get_user_data(self.username)
+        if 'friends_list' in user_data:
+            # 从好友的好友列表删除
+            del user_data['friends_list'][self.friend_username]
+
+        else:
+            user_data['friends_list'] = {}
+        server.data_db.set(self.username, user_data)
+
+        server.data_db_lock.release()
+
+
+class GetFriendsList(Event):
     def __init__(self, server: HCatServer, req):
-        self.username: str
-        self.token: str
+        super().__init__()
+
         self.server = server
         self.return_data = self._run(server, req)
 

@@ -53,6 +53,10 @@ class HCat:
             if can_load:
                 getattr(request_list[k]['module'], 'main')(self, request_list[k]['work_space'])
                 print('[Plugin] "{}" is loaded. ver:{}.'.format(plugin_config.name, plugin_config.version))
+            else:
+                print('[Plugin] "{}" could not be loaded, Please check the dependencies: {}'
+                      .format(plugin_config.name,
+                              str(plugin_config.depend)))
 
     def reload_all_plugins(self):
         self.event_dict.clear()
@@ -62,8 +66,8 @@ class HCat:
 
 class PluginConfig:
     def __init__(self):
-        self.plugin_name: str
-        self.description: str
-        self.author: Union[str, list]
+        self.plugin_name: str = ''
+        self.description: str = ''
+        self.author: Union[str, list] = ''
         self.depend = []
-        self.version: str
+        self.version: str = '1.0.0'
