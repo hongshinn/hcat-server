@@ -19,7 +19,7 @@ class CreateGroup(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'group_name' not in req_data:
+        if not ins(['username', 'token', 'group_name'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token or group_name is missing')
 
         # 获取请求参数
@@ -82,8 +82,7 @@ class JoinGroup(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'group_id' not in req_data or \
-                'additional_information' not in req_data:
+        if not ins(['username', 'token', 'group_id', 'additional_information'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token additional_information or group_id is missing')
 
         # 获取请求参数
@@ -196,7 +195,7 @@ class AgreeJoinGroupRequest(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'rid' not in req_data:
+        if not ins(['username', 'token', 'rid'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token or rid is missing')
 
         # 获取请求参数
@@ -271,7 +270,7 @@ class GetGroupMembersList(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'group_id' not in req_data:
+        if not ins(['username', 'token', 'group_id'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token or group_id is missing')
 
         # 获取请求参数
@@ -308,7 +307,7 @@ class GetGroupSettings(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'group_id' not in req_data:
+        if not ins(['username', 'token', 'group_id'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token or group_id is missing')
 
         # 获取请求参数
@@ -346,7 +345,7 @@ class ChangeGroupSettings(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'group_id' not in req_data:
+        if not ins(['username', 'token', 'group_id'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token or group_id is missing')
 
         # 获取请求参数
@@ -428,7 +427,7 @@ class GetGroupsList(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data:
+        if not ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
@@ -442,10 +441,8 @@ class GetGroupsList(Event):
             user_data = server.get_user_data(self.username)
 
             # 判断并返回群租列表
-            if 'groups_list' in user_data:
-                return ReturnData(ReturnData.OK).add('data', user_data['groups_list'])
-            else:
-                return ReturnData(ReturnData.OK).add('data', {})
+            rt_data = user_data['groups_list'] if 'groups_list' in user_data else {}
+            return ReturnData(ReturnData.OK).add('data', rt_data)
 
         else:
             return msg

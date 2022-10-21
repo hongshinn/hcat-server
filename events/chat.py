@@ -3,7 +3,7 @@ import time
 from containers import ReturnData, EventContainer, Group
 from events.event import Event
 from server import HCatServer
-from util import request_parse, ins
+from util import *
 
 
 class SendFriendMsg(Event):
@@ -18,10 +18,7 @@ class SendFriendMsg(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data \
-                or 'token' not in req_data \
-                or 'friend_username' not in req_data \
-                or 'msg' not in req_data:
+        if not ins(['username', 'token', 'friend_username', 'msg'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token friend_username or msg is missing')
 
         # 获取请求参数
@@ -29,11 +26,15 @@ class SendFriendMsg(Event):
         self.token = req_data['token']
         self.friend_username = req_data['friend_username']
         self.msg = req_data['msg']
+
+        # 取用户数据
         data = server.get_user_data(self.username)
+
         # 判断是否为空
         if 'friends_list' not in data:
             data['friends_list'] = {}
 
+        # 判断是否存在好友列表
         if self.friend_username not in data['friends_list']:
             return ReturnData(ReturnData.NULL, 'friends not exists.')
 
@@ -49,11 +50,8 @@ class SendFriendMsg(Event):
     def _return(self):
         if not self.cancel:
             self.server.data_db_lock.acquire()
-            friend_data = self.server.data_db.get(self.friend_username)
-            # 判断是否为空
-            if 'todo_list' not in friend_data:
-                friend_data['todo_list'] = []
 
+            # 创建事件
             ec = EventContainer(self.server.event_log_db, self.server.event_log_db_lock)
             ec. \
                 add('type', 'friend_msg'). \
@@ -62,12 +60,9 @@ class SendFriendMsg(Event):
                 add('msg', self.msg). \
                 add('time', time.time())
             ec.write()
-            # 清空todo_list
-            friend_data['todo_list'].append(ec.json)
 
-            # 计入数据库
-            self.server.data_db.set(self.friend_username, friend_data)
-            self.server.data_db_lock.release()
+            # 写入好友待办列表
+            self.server.set_user_todo_list(self.friend_username, ec)
 
             self.return_data = ReturnData(ReturnData.OK)
 
@@ -78,7 +73,7 @@ class SendFriendMsg(Event):
 class SendGroupMsg(Event):
     def __init__(self, server: HCatServer, req):
         super().__init__()
-
+        self.cancel = True
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
 
@@ -91,7 +86,6 @@ class SendGroupMsg(Event):
         # 获取请求参数
         self.username = req_data['username']
         self.token = req_data['token']
-        self.cancel = True
         self.group_id = req_data['group_id']
         self.msg = req_data['msg']
 
@@ -108,6 +102,7 @@ class SendGroupMsg(Event):
             # 返回数据
             if self.username in group.member_list:
                 self.cancel = False
+
                 return ReturnData(ReturnData.OK)
             else:
                 return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')

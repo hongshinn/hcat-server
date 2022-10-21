@@ -1,10 +1,9 @@
 import re
 
-import util
 from containers import ReturnData
 from events.event import Event
 from server import HCatServer
-from util import request_parse, salted_hash, get_random_token
+from util import *
 
 
 class AuthenticateToken(Event):
@@ -18,7 +17,7 @@ class AuthenticateToken(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if not util.ins(['username', 'token'], req_data):
+        if not ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
@@ -58,7 +57,7 @@ class GetTodoList(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if not util.ins(['username', 'token'], req_data):
+        if not ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
@@ -104,7 +103,7 @@ class Login(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if not util.ins(['username', 'password'], req_data):
+        if not ins(['username', 'password'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or password is missing')
 
         # 获取请求参数
@@ -158,7 +157,7 @@ class Logout(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if not util.ins(['username', 'token'], req_data):
+        if not ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
@@ -201,7 +200,7 @@ class Register(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if not util.ins(['username', 'password', 'display_name'], req_data):
+        if not ins(['username', 'password', 'display_name'], req_data):
             return ReturnData(ReturnData.ERROR, 'username password or display_name is missing')
 
         # 获取请求参数
@@ -266,7 +265,7 @@ class Rename(Event):
 
         # 判断请求体是否为空
 
-        if not util.ins(['username', 'token', 'display_name'], req_data):
+        if not ins(['username', 'token', 'display_name'], req_data):
             return ReturnData(ReturnData.ERROR, 'username password or display_name is missing')
 
         # 获取请求参数
@@ -309,7 +308,7 @@ class ChangePassword(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if not util.ins(['username', 'token', 'password', 'new_password'], req_data):
+        if not ins(['username', 'token', 'password', 'new_password'], req_data):
             return ReturnData(ReturnData.ERROR, 'username token password or display_name is missing')
 
         # 获取请求参数

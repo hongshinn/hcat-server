@@ -3,7 +3,7 @@ import time
 from containers import ReturnData, EventContainer
 from events.event import Event
 from server import HCatServer
-from util import request_parse
+from util import request_parse, ins
 
 
 class AddFriend(Event):
@@ -15,7 +15,7 @@ class AddFriend(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
+        if not ins(['username', 'token', 'friend_username'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token or friend_username is missing')
 
         # 获取请求参数
@@ -70,7 +70,7 @@ class AgreeFriendRequire(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'rid' not in req_data:
+        if not ins(['username', 'token', 'rid'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token or rid is missing')
 
         # 获取请求参数
@@ -165,7 +165,7 @@ class DeleteFriend(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'friend_username' not in req_data:
+        if not ins(['username', 'token', 'friend_username'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token or friend_username is missing')
 
         # 获取请求参数
@@ -229,7 +229,7 @@ class GetFriendsList(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data:
+        if not ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
