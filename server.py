@@ -20,7 +20,7 @@ del HCatServer
 
 
 def log_output(logger=__name__, log_level=logging.INFO, text=''):
-    logging.getLogger(__name__).log(log_level, text)
+    logging.getLogger(logger).log(log_level, text)
 
 
 class HCatServer:
@@ -30,15 +30,15 @@ class HCatServer:
         app = Flask(__name__)
         CORS(app)
         self.app = app
-        self.config = config
 
         # 初始化变量
         self.address = (config.IP, config.Port)
         self.gc_time = config.GCTime
         self.event_timeout = config.EventTimeout
         self.get_todo_list_count = {}
-        # 创建数据库对象
+        self.config = config
 
+        # 创建数据库对象
         self.auth_db = RPDB(os.path.join(os.getcwd(), 'data', 'auth'), slice_multiplier=2)
         self.data_db = RPDB(os.path.join(os.getcwd(), 'data', 'data'), slice_multiplier=2)
         self.event_log_db = RPDB(os.path.join(os.getcwd(), 'data', 'event_log'), slice_multiplier=2)
@@ -49,6 +49,7 @@ class HCatServer:
         self.event_log_db_lock = threading.Lock()
         self.auth_db_lock = threading.Lock()
         self.groups_db_lock = threading.Lock()
+
         # 加载插件
         self.hcat = HCat(self)
         self.hcat.load_all_plugins()
@@ -78,7 +79,7 @@ class HCatServer:
             """
             e = Logout(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/login', methods=['GET', 'POST'])
         def login():
@@ -103,19 +104,19 @@ class HCatServer:
             """
             e = Login(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/change_password', methods=['GET', 'POST'])
         def change_password():
             e = ChangePassword(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/authenticate_token', methods=['GET', 'POST'])
         def authenticate_token():
             e = AuthenticateToken(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/register', methods=['POST', 'GET'])
         def register():
@@ -138,7 +139,7 @@ class HCatServer:
             """
             e = Register(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/get_display_name/<username>', methods=['GET'])
         def get_display_name(username):
@@ -160,7 +161,7 @@ class HCatServer:
             # 判断用户名是否存在
             e = GetDisplayName(self, username)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/status/<username>', methods=['GET'])
         def status(username):
@@ -182,7 +183,7 @@ class HCatServer:
 
             e = Status(self, username)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/rename', methods=['POST', 'GET'])
         def rename():
@@ -207,7 +208,7 @@ class HCatServer:
             """
             e = Rename(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/auth/get_todo_list', methods=['POST', 'GET'])
         def get_todo_list():
@@ -232,7 +233,7 @@ class HCatServer:
             """
             e = GetTodoList(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/friend/add', methods=['POST', 'GET'])
         def add_friend():
@@ -260,7 +261,7 @@ class HCatServer:
             """
             e = AddFriend(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/friend/agree', methods=['POST', 'GET'])
         def agree_friend():
@@ -286,7 +287,7 @@ class HCatServer:
             """
             e = AgreeFriendRequire(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/friend/delete', methods=['POST', 'GET'])
         def delete_friend():
@@ -311,7 +312,7 @@ class HCatServer:
             """
             e = DeleteFriend(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/friend/get_friends_list', methods=['POST', 'GET'])
         def get_friend_list():
@@ -336,7 +337,7 @@ class HCatServer:
             """
             e = GetFriendsList(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/chat/friend/send_msg', methods=['POST', 'GET'])
         def send_friend_msg():
@@ -369,37 +370,37 @@ class HCatServer:
         def create_group():
             e = CreateGroup(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/join_group', methods=['POST', 'GET'])
         def join_group():
             e = JoinGroup(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/agree_join_group_request', methods=['POST', 'GET'])
         def agree_join_group_request():
             e = AgreeJoinGroupRequest(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/get_group_members_list', methods=['POST', 'GET'])
         def get_group_members_list():
             e = GetGroupMembersList(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/get_group_settings', methods=['POST', 'GET'])
         def get_group_settings():
             e = GetGroupSettings(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/change_group_settings', methods=['POST', 'GET'])
         def change_group_settings():
             e = ChangeGroupSettings(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/chat/group/send_msg', methods=['POST', 'GET'])
         def send_group_msg():
@@ -411,19 +412,19 @@ class HCatServer:
         def get_group_name(group_id):
             e = GetGroupName(self, group_id)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/get_groups_list', methods=['POST', 'GET'])
         def get_groups_list():
             e = GetGroupsList(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
         @self.app.route('/group/group_rename', methods=['POST', 'GET'])
         def groups_rename():
             e = GroupRename(self, request)
             self.hcat(e)
-            return e.return_data.json()
+            return e.e_return()
 
     def start(self):
         threading.Thread(target=self._detection_online_thread).start()
