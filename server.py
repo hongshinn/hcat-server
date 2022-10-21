@@ -1,14 +1,12 @@
-import logging
-
-from config_loader import Config
-
 HCatServer = None
+import logging
 import threading
 from typing import Union, Tuple
 
 from flask import Flask, request
 from flask_cors import CORS
 
+from config_loader import Config
 from events.auth import *
 from events.chat import *
 from events.friend import *
