@@ -85,27 +85,19 @@ class Group:
         self.group_settings = {'verification_method': 'ac', 'question': '', 'answer': ''}
 
     def send_msg(self, server: HCatServer, username, msg):
+        # 创建事件
+        ec = EventContainer(server.event_log_db, server.event_log_db_lock)
+        ec.add('type', 'group_msg'). \
+            add('rid', ec.rid). \
+            add('username', username). \
+            add('group_id', self.id). \
+            add('msg', msg). \
+            add('time', time.time())
+        ec.write()
 
-        for i in self.member_list:
-            if i != username:
-                # 创建事件
-                ec = EventContainer(server.event_log_db, server.event_log_db_lock)
-                ec.add('type', 'group_msg'). \
-                    add('rid', ec.rid). \
-                    add('username', username). \
-                    add('group_id', self.id). \
-                    add('msg', msg). \
-                    add('time', time.time())
-                ec.write()
-
-                # 将群聊消息事件写入成员的todo_list
-                server.data_db_lock.acquire()
-                member_data = server.get_user_data(username)
-                member_data['todo_list'].append(ec.json)
-                server.data_db.set(i, member_data)
-                server.data_db_lock.release()
-
-                del ec
+        for i in filter(lambda j: j != username, self.member_list):
+            # 将群聊消息事件写入成员的todo_list
+            server.set_user_todo_list(i, ec)
 
     def permission_match(self, username: str, permission=Permission_ADMIN) -> bool:
         """
