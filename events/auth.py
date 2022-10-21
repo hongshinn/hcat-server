@@ -1,5 +1,6 @@
 import re
 
+import util
 from containers import ReturnData
 from events.event import Event
 from server import HCatServer
@@ -15,8 +16,9 @@ class AuthenticateToken(Event):
 
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
+
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data:
+        if not util.ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
@@ -54,8 +56,9 @@ class GetTodoList(Event):
 
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
+
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data:
+        if not util.ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
@@ -67,23 +70,22 @@ class GetTodoList(Event):
         if auth_status:
             # 在线判断计次
             server.data_db_lock.acquire()
-            if self.username in server.get_todo_list_count:
-                server.get_todo_list_count[self.username] += 1
-            else:
-                server.get_todo_list_count[self.username] = 0
+            server.get_todo_list_count[self.username] = 0 if self.username in server.get_todo_list_count else \
+                server.get_todo_list_count[self.username] + 1
 
             data = server.get_user_data(self.username)
-            # 取todo_list
-            if 'todo_list' in data:
-                # 取得结果
-                res = data['todo_list']
-            else:
-                res = []
-            # 清空todo_list
+
+            # 取待办列表
+            res = data['todo_list'] if 'todo_list' in data else []
+
+            # 清空待办列表
             data['todo_list'] = []
+
             # 计入数据库
             server.data_db.set(self.username, data)
+
             server.data_db_lock.release()
+
             return ReturnData(ReturnData.OK).add('data', res)
 
         else:
@@ -102,7 +104,7 @@ class Login(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if 'username' not in req_data or 'password' not in req_data:
+        if not util.ins(['username', 'password'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or password is missing')
 
         # 获取请求参数
@@ -118,6 +120,7 @@ class Login(Event):
                                                                         server.auth_db.get(self.username)['salt'],
                                                                         self.username):
             self.cancel = False
+
             # 生成随机密钥
             self.token = get_random_token()
 
@@ -129,6 +132,7 @@ class Login(Event):
 
     def _return(self):
         server = self.server
+
         server.data_db_lock.acquire()
 
         # 读取数据
@@ -137,8 +141,10 @@ class Login(Event):
         # 写入字典
         userdata['status'] = 'online'
         userdata['token'] = self.token
+
         # 写出
         server.data_db.set(self.username, userdata)
+
         server.data_db_lock.release()
 
 
@@ -152,7 +158,7 @@ class Logout(Event):
         req_data = request_parse(request)
 
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data:
+        if not util.ins(['username', 'token'], req_data):
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
 
         # 获取请求参数
@@ -163,15 +169,19 @@ class Logout(Event):
         if self.username not in server.auth_db.getall():
             return ReturnData(ReturnData.NULL, 'username is not exist')
 
-            # 验证用户名与token
+        # 验证用户名与token
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
             # 写入数据库
             server.data_db_lock.acquire()
+
             userdata = server.get_user_data(self.username)
+
             userdata['status'] = 'offline'
             userdata['token'] = ''
+
             server.data_db.set(self.username, userdata)
+
             server.data_db_lock.release()
 
             return ReturnData(ReturnData.OK)
@@ -191,7 +201,7 @@ class Register(Event):
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
         # 判断请求体是否为空
-        if 'username' not in req_data or 'password' not in req_data or 'display_name' not in req_data:
+        if not util.ins(['username', 'password', 'display_name'], req_data):
             return ReturnData(ReturnData.ERROR, 'username password or display_name is missing')
 
         # 获取请求参数
@@ -211,7 +221,6 @@ class Register(Event):
 
         # 判断用户名是否存在
         if server.auth_db.exists(self.username):
-
             return ReturnData(ReturnData.ERROR, 'username already exists')
         else:
             self.cancel = False
@@ -238,10 +247,9 @@ class Status(Event):
     def _run(self, server):
         # 判断用户名是否存在
         if server.data_db.exists(self.username):
-
             return ReturnData(ReturnData.OK).add('user_status', server.get_user_data(self.username)['status'])
-        else:
 
+        else:
             return ReturnData(ReturnData.NULL, 'username not exists')
 
 
@@ -255,14 +263,17 @@ class Rename(Event):
 
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
+
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'display_name' not in req_data:
+
+        if not util.ins(['username', 'token', 'display_name'], req_data):
             return ReturnData(ReturnData.ERROR, 'username password or display_name is missing')
 
         # 获取请求参数
         self.username = req_data['username']
         self.token = req_data['token']
         self.display_name = req_data['display_name']
+
         # 验证密钥
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
@@ -273,11 +284,16 @@ class Rename(Event):
 
     def _return(self):
         server = self.server
+
         server.data_db_lock.acquire()
+
         auth_data = server.auth_db.get(self.username)
+
         self.former_name = auth_data['display_name']
         auth_data['display_name'] = self.display_name
+
         server.auth_db.set(self.username, auth_data)
+
         server.data_db_lock.release()
 
 
@@ -291,10 +307,10 @@ class ChangePassword(Event):
 
     def _run(self, server: HCatServer, request):
         req_data = request_parse(request)
+
         # 判断请求体是否为空
-        if 'username' not in req_data or 'token' not in req_data or 'password' not in req_data or \
-                'new_password' not in req_data:
-            return ReturnData(ReturnData.ERROR, 'username password or display_name is missing')
+        if not util.ins(['username', 'token', 'password', 'new_password'], req_data):
+            return ReturnData(ReturnData.ERROR, 'username token password or display_name is missing')
 
         # 获取请求参数
         self.username = req_data['username']
@@ -320,7 +336,6 @@ class ChangePassword(Event):
                 self.cancel = False
 
                 # 返回结果
-
                 return ReturnData(ReturnData.OK, 'change success')
             else:
 
@@ -330,10 +345,15 @@ class ChangePassword(Event):
 
     def _return(self):
         server = self.server
-        salt = get_random_token(16)
+
         server.auth_db_lock.acquire()
+
         auth_data = server.auth_db.get(self.username)
+
+        salt = get_random_token(16)
         auth_data['password'] = salted_hash(self.new_password, salt, self.username)
         auth_data['salt'] = salt
+
         server.auth_db.set(self.username, auth_data)
+
         server.auth_db_lock.release()
