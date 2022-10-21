@@ -107,7 +107,12 @@ class Group:
 
                 del ec
 
-    def permission_match(self, username, permission=Permission_ADMIN):
+    def permission_match(self, username: str, permission=Permission_ADMIN) -> bool:
+        """
+        :param username: str
+        :param permission: Group.Permission_ADMIN or Group.Permission_OWNER
+        :return: bool
+        """
         if permission == self.Permission_ADMIN:
             return username == self.owner or username in self.admin_list
         elif permission == self.Permission_OWNER:

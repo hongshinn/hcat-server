@@ -15,7 +15,9 @@ class CreateGroup(Event):
         self.cancel = True
 
     def _run(self, server: HCatServer, request):
+        # 获取请求数据
         req_data = request_parse(request)
+
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data or 'group_name' not in req_data:
             return ReturnData(ReturnData.ERROR, 'username token or group_name is missing')
@@ -33,6 +35,7 @@ class CreateGroup(Event):
                 self.group_id = get_random_token(5)
                 if not server.groups_db.exists(self.group_id):
                     break
+
             # 实例化群租
             self.group = Group(self.group_id)
 
@@ -42,13 +45,16 @@ class CreateGroup(Event):
             self.group.member_data[self.username] = {'nick': server.auth_db.get(self.username)['display_name'],
                                                      'time': time.time()}
             self.group.owner = self.username
+
             self.cancel = False
+
             return ReturnData(ReturnData.OK, '').add('group_id', self.group_id)
         else:
             return msg
 
     def _return(self):
         server = self.server
+
         # 将群租写入数据库
         server.groups_db.set(self.group_id, self.group)
 
@@ -58,20 +64,23 @@ class CreateGroup(Event):
         if 'groups_list' not in user_data:
             user_data['groups_list'] = {}
         user_data['groups_list'][self.group_id] = {'remark': self.group.name, 'time': time.time()}
+
         server.data_db.set(self.username, user_data)
+
         server.data_db_lock.release()
 
 
 class JoinGroup(Event):
     def __init__(self, server: HCatServer, req):
         super().__init__()
-
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
         self.cancel = True
 
     def _run(self, server: HCatServer, request):
+        # 获取请求数据
         req_data = request_parse(request)
+
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data or 'group_id' not in req_data or \
                 'additional_information' not in req_data:
@@ -86,13 +95,15 @@ class JoinGroup(Event):
         # 验证用户名与token
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
-            # 判断是否存在群聊
+            # 判断用户是否存在群聊
             if not server.groups_db.exists(self.group_id):
                 return ReturnData(ReturnData.NULL, 'group not exists')
 
             # 获取群租
             self.group: Group = server.groups_db.get(self.group_id)
+
             self.cancel = False
+
             return ReturnData(ReturnData.OK, '')
         else:
             return msg
@@ -196,27 +207,40 @@ class AgreeJoinGroupRequest(Event):
         # 验证用户名与token
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
+            # 检查是否存在事件
             if not server.event_log_db.exists(self.rid):
                 return ReturnData(ReturnData.NULL, 'event not exists')
+            # 获取事件
             self.event_json = server.event_log_db.get(self.rid)
+            # 获取群租id
             self.group_id = self.event_json['group_id']
+
             self.cancel = False
+
             return ReturnData(ReturnData.OK)
         else:
             return msg
 
     def _return(self):
         server = self.server
-        # 获取群租
+
+        # 上锁
         server.groups_db_lock.acquire()
+
+        # 获取群租
         group: Group = server.groups_db.get(self.group_id)
-        if self.username != group.owner and self.username not in group.admin_list:
+
+        # 检查权限
+
+        if not group.permission_match(self.username):
             return ReturnData(ReturnData.ERROR, 'you do not have permission')
+
+        # 加入成员
         group.member_list.append(self.event_json['username'])
         server.groups_db.set(self.group_id, group)
         server.groups_db_lock.release()
 
-        # 写入入群者的代办列表
+        # 创建事件
         ec = EventContainer(server.event_log_db, server.event_log_db_lock)
         ec. \
             add('type', 'group_join_request_agreed'). \
@@ -224,9 +248,11 @@ class AgreeJoinGroupRequest(Event):
             add('group_id', self.group_id). \
             add('time', time.time())
         ec.write()
+
+        # 写入入群者的代办列表
         server.set_user_todo_list(self.event_json['username'], ec)
 
-        # 将群租加入用户groups_list
+        # 将群租加入入群者的groups_list
         server.data_db_lock.acquire()
         user_data = server.get_user_data(self.event_json['username'])
         if 'groups_list' not in user_data:
@@ -353,8 +379,12 @@ class ChangeGroupSettings(Event):
 
     def _return(self):
         server = self.server
+
         server.groups_db_lock.acquire()
+
+        # 获取群租
         group: Group = server.groups_db.get(self.group_id)
+
         # 检测键是否存在
         for i in self.settings:
             if i not in group.group_settings:
@@ -373,11 +403,12 @@ class GetGroupName(Event):
         self.return_data = self._run(server)
 
     def _run(self, server):
-
         server.groups_db_lock.acquire()
+
         if server.groups_db.exists(self.group_id):
             # 获取群租
             group: Group = server.groups_db.get(self.group_id)
+
             # 返回数据
             server.groups_db_lock.release()
             return ReturnData(ReturnData.OK).add('group_name', group.name)
@@ -393,7 +424,9 @@ class GetGroupsList(Event):
         self.return_data = self._run(server, req)
 
     def _run(self, server: HCatServer, request):
+        # 取请求参数
         req_data = request_parse(request)
+
         # 判断请求体是否为空
         if 'username' not in req_data or 'token' not in req_data:
             return ReturnData(ReturnData.ERROR, 'username or token is missing')
@@ -448,12 +481,21 @@ class GroupRename(Event):
 
     def _return(self):
         server = self.server
+
         server.groups_db_lock.acquire()
-        # 实例化群聊
+
+        # 获取群聊
         group: Group = server.groups_db.get(self.group_id)
+
+        # 检查权限
         if not group.permission_match(self.username):
             server.groups_db_lock.release()
             return ReturnData(ReturnData.ERROR, 'you do not have permission')
+
+        # 重命名
         group.name = self.group_name
+
+        # 写入数据
         server.groups_db.set(self.group_id, group)
+
         server.groups_db_lock.release()
