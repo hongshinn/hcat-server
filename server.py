@@ -435,7 +435,7 @@ class HCatServer:
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
 
-        log_output(__name__, text='Server is listening to 127.0.0.1:8080.')
+        log_output(__name__, text='Server is listening to {}:{}.'.format(self.address[0], self.address[1]))
         # 判断是否ssl
         if self.config.SSLCert is not None:
             server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app,
