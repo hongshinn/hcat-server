@@ -31,7 +31,7 @@ class HCatServer:
         self.event_timeout = config.EventTimeout
         self.get_todo_list_count = {}
         self.config = config
-        self.ver = '0.3.6'
+        self.ver = '0.3.7'
 
         # 创建数据库对象
         log_output(__name__, text='Loading the database...')
