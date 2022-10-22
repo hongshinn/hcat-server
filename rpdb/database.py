@@ -3,10 +3,12 @@ import hashlib
 import json
 import os.path
 import pickle
+import threading
 from time import sleep
 
 
 class OldRPDB:
+
     def __init__(self, path, auto_save=True):
         self.path = path
         if os.path.exists(path):
@@ -62,15 +64,18 @@ class RPDB:
         else:
             self.keys = set([])
 
+        threading.Thread(target=self._recycle_thread, daemon=True).start()
+
     def _recycle_thread(self):
         while True:
-            sleep(1)
+            sleep(3)
             del_list = []
             for key in self.dbs:
-                self.dbs[key]['vitality_value'] -= 1
+                self._save_slice(key)
+                self.dbs[key]['vitality_value'] -= len(self.dbs) / 2 + 1
                 if self.dbs[key]['vitality_value'] <= 0:
-                    self._save_slice(key)
                     del_list.append(key)
+
             for key in del_list:
                 del self.dbs[key]
             try:
