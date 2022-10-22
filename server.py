@@ -34,7 +34,7 @@ class HCatServer:
         self.event_timeout = config.EventTimeout
         self.get_todo_list_count = {}
         self.config = config
-        self.ver = '1.3.4'
+        self.ver = '0.3.5'
 
         # 创建数据库对象
         self.auth_db = RPDB(os.path.join(os.getcwd(), 'data', 'auth'), slice_multiplier=2)
