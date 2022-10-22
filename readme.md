@@ -2,7 +2,7 @@
 
 ## 简介
 
-HCat-Server是HCat聊天室的服务端.
+HCat-Server是[HCat聊天室](https://3455f9504d.goho.co/hcat/login.html)的服务端.
 
 ## 功能
 
