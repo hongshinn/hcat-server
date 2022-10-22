@@ -13,6 +13,7 @@ HCat-Server是[HCat聊天室](https://3455f9504d.goho.co/hcat/login.html)的服�
 ## 使用方式
 
 如果你是windows用户,你可以选择从Releases获取或者使用源码运行
+
 如果你是linux用户,那很抱歉..你只能使用源码运行,但我相信,这难不倒你
 
 1. 方式1:从Releases获取:
