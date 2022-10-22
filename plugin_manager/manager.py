@@ -30,6 +30,9 @@ class HCat:
                 f(e)
 
     def load_all_plugins(self):
+        if not os.path.exists('plugins'):
+            os.mkdir('plugins')
+
         request_list = {}
         # 枚举插件
         for i in os.listdir('plugins'):

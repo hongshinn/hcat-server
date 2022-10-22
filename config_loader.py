@@ -1,4 +1,5 @@
 import json
+import os.path
 
 
 class Config:
@@ -16,7 +17,12 @@ class Config:
 
         # 读取
         self.file = file
-        self._config = json.load(open(file, 'r', encoding='utf8'))
+        if os.path.exists(file):
+            self._config = json.load(open(file, 'r', encoding='utf8'))
+        else:
+            self.write()
+            self._config = json.load(open(file, 'r', encoding='utf8'))
+
         if 'Ver' in self._config:
             self.Ver = self._config['Ver']
         else:
