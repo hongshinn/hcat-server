@@ -1,9 +1,9 @@
 HCatServer = None
-import logging
 from typing import Union, Tuple
 
 from flask import Flask, request
 from flask_cors import CORS
+from gevent import pywsgi
 
 from config_loader import Config
 from events.auth import *
@@ -16,15 +16,12 @@ from rpdb.database import *
 del HCatServer
 
 
-def log_output(logger=__name__, log_level=logging.INFO, text=''):
-    logging.getLogger(logger).log(log_level, text)
-
-
 class HCatServer:
 
     def __init__(self, config: Config):
         # 初始化Flask对象
         app = Flask(__name__)
+
         CORS(app)
         self.app = app
 
@@ -34,13 +31,15 @@ class HCatServer:
         self.event_timeout = config.EventTimeout
         self.get_todo_list_count = {}
         self.config = config
-        self.ver = '0.3.5'
+        self.ver = '0.3.6'
 
         # 创建数据库对象
+        log_output(__name__, text='Loading the database...')
         self.auth_db = RPDB(os.path.join(os.getcwd(), 'data', 'auth'), slice_multiplier=2)
         self.data_db = RPDB(os.path.join(os.getcwd(), 'data', 'data'), slice_multiplier=2)
         self.event_log_db = RPDB(os.path.join(os.getcwd(), 'data', 'event_log'), slice_multiplier=2)
         self.groups_db = RPDB(os.path.join(os.getcwd(), 'data', 'groups'), slice_multiplier=2)
+        log_output(__name__, text='Database loading completed.')
 
         # 创建锁
         self.data_db_lock = threading.Lock()
@@ -49,8 +48,10 @@ class HCatServer:
         self.groups_db_lock = threading.Lock()
 
         # 加载插件
+        log_output(__name__, text='Loading the plugins...')
         self.hcat = HCat(self)
         self.hcat.load_all_plugins()
+        log_output(__name__, text='Plugins loading completed.')
 
         @self.app.route('/', methods=['GET'])
         def main_page():
@@ -424,17 +425,25 @@ class HCatServer:
             self.hcat(e)
             return e.e_return()
 
+        @app.before_request
+        def log_each_request():
+            log_output('Flask', text='{} {} {}'.format(request.remote_addr, request.method, request.path))
+
     def start(self):
+        log_output(__name__, text='Server is starting up...')
         # 多线程启动
         threading.Thread(target=self._detection_online_thread).start()
         threading.Thread(target=self._event_log_clear_thread).start()
 
+        log_output(__name__, text='Server is listening to 127.0.0.1:8080.')
         # 判断是否ssl
         if self.config.SSLCert is not None:
-            self.app.run(host=self.address[0], port=self.address[1],
-                         ssl_context=(self.config.SSLCert, self.config.SSLKey))
+            server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app,
+                                       ssl_context=(self.config.SSLCert, self.config.SSLKey))
+            server.serve_forever()
         else:
-            self.app.run(host=self.address[0], port=self.address[1])
+            server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app)
+            server.serve_forever()
 
     def _event_log_clear_thread(self):
 

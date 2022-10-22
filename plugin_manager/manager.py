@@ -1,8 +1,10 @@
 import importlib
+import logging
 import os
 from typing import Union
 
 from server import HCatServer
+from util import log_output
 
 
 class HCat:
@@ -55,11 +57,13 @@ class HCat:
                 can_load = can_load and (i in request_list)
             if can_load:
                 getattr(request_list[k]['module'], 'main')(self, request_list[k]['work_space'])
-                print('[Plugin] "{}" is loaded. ver:{}.'.format(plugin_config.name, plugin_config.version))
+                log_output('Plugin', log_level=logging.INFO,
+                           text='"{}" is loaded. ver:{}.'.format(plugin_config.name, plugin_config.version))
             else:
-                print('[Plugin] "{}" could not be loaded, Please check the dependencies: {}'
-                      .format(plugin_config.name,
-                              str(plugin_config.depend)))
+                log_output('Plugin', log_level=logging.WARN,
+                           text='"{}" could not be loaded, Please check the dependencies: {}.'
+                           .format(plugin_config.name,
+                                   str(plugin_config.depend)))
 
     def reload_all_plugins(self):
         self.event_dict.clear()

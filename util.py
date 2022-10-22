@@ -1,5 +1,12 @@
 import hashlib
+import logging
 import random
+
+
+class FlaskLoggerFilter(logging.Filter):
+    def filter(self, record):
+        print(record.msg)
+        return True
 
 
 def get_random_token(key_len=128):
@@ -39,3 +46,9 @@ def not_ins(obj: iter, collection) -> bool:
     for i in obj:
         res = res and (i not in collection)
     return res
+
+
+def log_output(logger=__name__, log_level=logging.INFO, text=''):
+    log = logging.getLogger(logger)
+
+    log.log(log_level, text)
