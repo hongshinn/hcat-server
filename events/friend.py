@@ -123,7 +123,7 @@ class AgreeFriendRequire(Event):
         ec.write()
 
         # 将同意申请加入朋友的todo_list
-        server.set_user_todo_list(self.username, ec)
+        server.set_user_todo_list(self.friend_username, ec)
 
         server.data_db_lock.acquire()
         friend_data = server.data_db.get(self.friend_username)
