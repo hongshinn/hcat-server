@@ -59,6 +59,8 @@ class RPDB:
         self.dbs = {}
         self.slice_multiplier = slice_multiplier
         self.set_list = []
+        if os.path.exists(self.path):
+            os.makedirs(self.path)
         if os.path.exists(os.path.join(self.path, 'all.keys')):
             self.keys = set(json.load(open(os.path.join(self.path, 'all.keys'), 'r', encoding='utf8'))['keys'])
         else:
