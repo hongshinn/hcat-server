@@ -1,3 +1,5 @@
+import sys
+
 HCatServer = None
 from typing import Union, Tuple
 
@@ -31,7 +33,7 @@ class HCatServer:
         self.event_timeout = config.EventTimeout
         self.get_todo_list_count = {}
         self.config = config
-        self.ver = '0.3.7'
+        self.ver = '0.3.8'
 
         # 创建数据库对象
         log_output(__name__, text='Loading the database...')
@@ -425,10 +427,13 @@ class HCatServer:
             self.hcat(e)
             return e.e_return()
 
-        @app.before_request
+        @self.app.before_request
         def log_each_request():
             log_output('Flask', text='{} {} {}'.format(request.remote_addr, request.method, request.path))
 
+        log_output(text='----Server is loaded----')
+        log_output(text='Version:{}'.format(self.ver))
+        log_output(text='Py ver:{}'.format(sys.version_info))
     def start(self):
         log_output(__name__, text='Server is starting up...')
         # 多线程启动
@@ -442,7 +447,7 @@ class HCatServer:
             server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app,
                                        ssl_context=(self.config.SSLCert, self.config.SSLKey))
         else:
-            server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app, handler_class=CORSHandle)
+            server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app)
 
         server.serve_forever()
 

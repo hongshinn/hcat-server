@@ -137,6 +137,7 @@ class RPDB:
     def rem(self, key):
         self._load_slice(key)
         del self.dbs[self.get_key_hash(key)]['data'][key]
+        self.keys.remove(key)
         # self.set_list.append({'type': 'rem', 'key': key})
 
     def close(self):
