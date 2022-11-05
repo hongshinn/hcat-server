@@ -469,7 +469,7 @@ class HCatServer:
             self.event_log_db_lock.release()
             # 输出
             if i > 0:
-                print('Cleaned up {} expired events.'.format(i))
+                log_output(text='Cleaned up {} expired events.'.format(i))
             time.sleep(self.gc_time)
 
     def _detection_online_thread(self):
