@@ -410,6 +410,7 @@ class GetGroupName(Event):
             server.groups_db_lock.release()
             return ReturnData(ReturnData.OK).add('group_name', group.name)
         else:
+            server.groups_db_lock.release()
             return ReturnData(ReturnData.NULL, 'group rent does not exist')
 
 

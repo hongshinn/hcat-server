@@ -438,12 +438,13 @@ class HCatServer:
         log_output(__name__, text='Server is listening to {}:{}.'.format(self.address[0], self.address[1]))
         # 判断是否ssl
         if self.config.SSLCert is not None:
+
             server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app,
                                        ssl_context=(self.config.SSLCert, self.config.SSLKey))
-            server.serve_forever()
         else:
-            server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app)
-            server.serve_forever()
+            server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app, handler_class=CORSHandle)
+
+        server.serve_forever()
 
     def _event_log_clear_thread(self):
 

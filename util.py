@@ -2,11 +2,17 @@ import hashlib
 import logging
 import random
 
+from gevent.pywsgi import WSGIHandler
+
 
 class FlaskLoggerFilter(logging.Filter):
     def filter(self, record):
         print(record.msg)
         return True
+
+
+class CORSHandle(WSGIHandler):
+    response_headers = [('Access-Control-Allow-Origin', '*')]
 
 
 def get_random_token(key_len=128):

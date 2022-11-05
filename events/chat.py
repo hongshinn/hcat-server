@@ -44,12 +44,11 @@ class SendFriendMsg(Event):
             self.cancel = False
 
         else:
-            server.data_db_lock.release()
+
             return rt_msg
 
     def _return(self):
         if not self.cancel:
-            self.server.data_db_lock.acquire()
 
             # 创建事件
             ec = EventContainer(self.server.event_log_db, self.server.event_log_db_lock)
