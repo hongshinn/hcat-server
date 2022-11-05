@@ -1,3 +1,4 @@
+import platform
 import sys
 
 HCatServer = None
@@ -431,9 +432,6 @@ class HCatServer:
         def log_each_request():
             log_output('Flask', text='{} {} {}'.format(request.remote_addr, request.method, request.path))
 
-        log_output(text='----Server is loaded----')
-        log_output(text='Version:{}'.format(self.ver))
-        log_output(text='Py ver:{}'.format(sys.version_info))
     def start(self):
         log_output(__name__, text='Server is starting up...')
         # 多线程启动
@@ -441,6 +439,12 @@ class HCatServer:
         threading.Thread(target=self._event_log_clear_thread).start()
 
         log_output(__name__, text='Server is listening to {}:{}.'.format(self.address[0], self.address[1]))
+        log_output(text='----Server is loaded----')
+        log_output(text='Version:{}'.format(self.ver))
+        log_output(text='Py ver:{}'.format(sys.version))
+        log_output(text='SYS ver:{}'.format(platform.platform()))
+        log_output(text='------------------------')
+
         # 判断是否ssl
         if self.config.SSLCert is not None:
 
