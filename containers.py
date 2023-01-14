@@ -71,10 +71,10 @@ class Group:
     def __init__(self, group_id):
         self.id = group_id
         self.name = ''
-        self.member_list = []
+        self.member_list = set()
         self.member_data = {}
         self.owner = ''
-        self.admin_list = []
+        self.admin_list = set()
         '''
         verification_method:
         ac:administrator consent--需要管理同意

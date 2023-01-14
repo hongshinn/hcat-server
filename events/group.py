@@ -40,7 +40,7 @@ class CreateGroup(Event):
 
             # 设置群租
             self.group.name = self.group_name
-            self.group.member_list.append(self.username)
+            self.group.member_list.add(self.username)
             self.group.member_data[self.username] = {'nick': server.auth_db.get(self.username)['display_name'],
                                                      'time': time.time()}
             self.group.owner = self.username
@@ -232,8 +232,9 @@ class AgreeJoinGroupRequest(Event):
         if not group.permission_match(self.username):
             return ReturnData(ReturnData.ERROR, 'you do not have permission')
 
+
         # 加入成员
-        group.member_list.append(self.event_json['username'])
+        group.member_list.add(self.event_json['username'])
         server.groups_db.set(self.group_id, group)
         server.groups_db_lock.release()
 
@@ -290,7 +291,7 @@ class GetGroupMembersList(Event):
 
             # 返回数据
             if self.username in group.member_list:
-                return ReturnData(ReturnData.OK).add('data', group.member_list)
+                return ReturnData(ReturnData.OK).add('data', list(group.member_list))
             else:
                 return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')
         else:
