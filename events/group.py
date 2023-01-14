@@ -252,12 +252,11 @@ class AgreeJoinGroupRequest(Event):
         # 将群租加入入群者的groups_list
         server.data_db_lock.acquire()
         user_data = server.get_user_data(self.event_json['username'])
-        print(self.event_json['username'])
 
         if 'groups_list' not in user_data:
             user_data['groups_list'] = {}
         user_data['groups_list'][self.group_id] = {'remark': group.name, 'time': time.time()}
-        print(user_data['groups_list'])
+        server.data_db.set(self.event_json['username'],user_data)
         server.data_db_lock.release()
 
 
