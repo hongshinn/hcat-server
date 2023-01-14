@@ -14,5 +14,7 @@ class Event:
 
     def e_return(self):
         if not self.cancel:
-            self._return()
+            rt = self._return()
+            if rt:
+                self.return_data = rt
         return self.return_data.json()

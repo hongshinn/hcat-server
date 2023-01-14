@@ -428,23 +428,17 @@ class HCatServer:
             self.hcat(e)
             return e.e_return()
 
+        @self.app.route('/group/leave', methods=['POST', 'GET'])
+        def groups_leave():
+            e = Leave(self, request)
+            self.hcat(e)
+            return e.e_return()
+
         @self.app.before_request
         def log_each_request():
             log_output('Flask', text='{} {} {}'.format(request.remote_addr, request.method, request.path))
 
-    def start(self):
-        log_output(__name__, text='Server is starting up...')
-        # 多线程启动
-        threading.Thread(target=self._detection_online_thread).start()
-        threading.Thread(target=self._event_log_clear_thread).start()
-
-        log_output(__name__, text='Server is listening to {}:{}.'.format(self.address[0], self.address[1]))
-        log_output(text='----Server is loaded----')
-        log_output(text='Version:{}'.format(self.ver))
-        log_output(text='Py ver:{}'.format(sys.version))
-        log_output(text='SYS ver:{}'.format(platform.platform()))
-        log_output(text='------------------------')
-
+    def _server_thread(self):
         # 判断是否ssl
         if self.config.SSLCert is not None:
 
@@ -454,6 +448,30 @@ class HCatServer:
             server = pywsgi.WSGIServer((self.address[0], self.address[1]), self.app)
 
         server.serve_forever()
+
+    def start(self):
+        log_output(__name__, text='Server is starting up...')
+        # 线程启动
+        t_do = threading.Thread(target=self._detection_online_thread, daemon=True)
+        t_elc = threading.Thread(target=self._event_log_clear_thread, daemon=True)
+        t_s = threading.Thread(target=self._server_thread, daemon=True)
+
+        t_do.start()
+        t_elc.start()
+        t_s.start()
+
+        log_output(__name__, text='Server is listening to {}:{}.'.format(self.address[0], self.address[1]))
+        log_output(text='----Server is loaded----')
+        log_output(text='Version:{}'.format(self.ver))
+        log_output(text='Py ver:{}'.format(sys.version))
+        log_output(text='SYS ver:{}'.format(platform.platform()))
+        log_output(text='------------------------')
+        loop = True
+        while loop:
+            try:
+                t_do.join(timeout=0.1)
+            except KeyboardInterrupt:
+                loop = False
 
     def _event_log_clear_thread(self):
 

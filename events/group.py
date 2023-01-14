@@ -232,7 +232,6 @@ class AgreeJoinGroupRequest(Event):
         if not group.permission_match(self.username):
             return ReturnData(ReturnData.ERROR, 'you do not have permission')
 
-
         # 加入成员
         group.member_list.add(self.event_json['username'])
         server.groups_db.set(self.group_id, group)
@@ -257,7 +256,7 @@ class AgreeJoinGroupRequest(Event):
         if 'groups_list' not in user_data:
             user_data['groups_list'] = {}
         user_data['groups_list'][self.group_id] = {'remark': group.name, 'time': time.time()}
-        server.data_db.set(self.event_json['username'],user_data)
+        server.data_db.set(self.event_json['username'], user_data)
         server.data_db_lock.release()
 
 
@@ -498,3 +497,69 @@ class GroupRename(Event):
         server.groups_db.set(self.group_id, group)
 
         server.groups_db_lock.release()
+
+
+class Leave(Event):
+    def __init__(self, server: HCatServer, req):
+        super().__init__()
+
+        self.cancel = True
+        self.server: HCatServer = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if not ins(['username', 'token', 'group_id'], req_data):
+            return ReturnData(ReturnData.ERROR, 'username token group_id is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.group_id = req_data['group_id']
+
+        # 验证用户名与token
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            self.cancel = False
+            return ReturnData(ReturnData.OK, '')
+        else:
+            return msg
+
+    def _return(self):
+        server = self.server
+
+        server.groups_db_lock.acquire()
+
+        # 获取群聊
+        group: Group = server.groups_db.get(self.group_id)
+
+        # 检查权限
+        if self.username not in group.member_list:
+            server.groups_db_lock.release()
+            return ReturnData(ReturnData.ERROR, 'you are not in the group')
+        # 检查是否为群主
+        if self.username == group.owner:
+            server.groups_db_lock.release()
+            return ReturnData(ReturnData.ERROR, 'you can not leave the group rent, because you are the owner')
+
+        # 移除群员
+        group.member_list.remove(self.username)
+
+        # 检查是否为管理员
+        if self.username in group.admin_list:
+            group.admin_list.remove(self.username)
+
+        # 写入数据
+        server.groups_db.set(self.group_id, group)
+
+        server.groups_db_lock.release()
+        server.data_db_lock.acquire()
+        user_data = server.get_user_data(self.username)
+        if 'groups_list' not in user_data:
+            user_data['groups_list'] = {}
+        user_data['groups_list'].pop(self.group_id)
+        server.data_db.set(self.username, user_data)
+        server.data_db_lock.release()
+        return ReturnData(ReturnData.OK, '')
+# todo:群转让
