@@ -434,6 +434,12 @@ class HCatServer:
             self.hcat(e)
             return e.e_return()
 
+        @self.app.route('/group/kick', methods=['POST', 'GET'])
+        def groups_leave():
+            e = Kick(self, request)
+            self.hcat(e)
+            return e.e_return()
+
         @self.app.before_request
         def log_each_request():
             log_output('Flask', text='{} {} {}'.format(request.remote_addr, request.method, request.path))
