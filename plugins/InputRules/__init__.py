@@ -12,7 +12,7 @@ def main(hcat: HCat, workspace: str):
 
     @hcat.event_handle
     def send_group_msg(e: SendGroupMsg):
-        if e.msg == '':
+        if len(e.msg) == 0:
             e.return_data = ReturnData(ReturnData.ERROR, 'input content cannot be empty')
             e.cancel = True
 

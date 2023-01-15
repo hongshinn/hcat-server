@@ -114,4 +114,5 @@ class SendGroupMsg(Event):
             # 获取群租
             group: Group = self.server.groups_db.get(self.group_id)
             group.send_msg(self.server, self.username, self.msg)
+
             self.server.groups_db_lock.release()
