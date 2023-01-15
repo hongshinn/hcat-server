@@ -2,6 +2,7 @@ import time
 
 from flask import jsonify
 
+from jelly import Jelly
 from server import HCatServer
 from util import get_random_token
 
@@ -64,17 +65,22 @@ class ReturnData:
         return self.json_data
 
 
-class Group:
+class Group(Jelly):
     Permission_OWNER = 0
     Permission_ADMIN = 1
 
     def __init__(self, group_id):
+        super().__init__()
         self.id = group_id
+
+    def _var_init(self):
         self.name = ''
         self.member_list = set()
         self.member_data = {}
         self.owner = ''
         self.admin_list = set()
+        self.member_settings = {}
+        self.ban_dict = {}
         '''
         verification_method:
         ac:administrator consent--需要管理同意

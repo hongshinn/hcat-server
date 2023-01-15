@@ -49,7 +49,6 @@ class SendFriendMsg(Event):
 
     def _return(self):
         if not self.cancel:
-
             # 创建事件
             ec = EventContainer(self.server.event_log_db, self.server.event_log_db_lock)
             ec. \
@@ -110,9 +109,16 @@ class SendGroupMsg(Event):
 
     def _return(self):
         if not self.cancel:
-            self.server.groups_db_lock.acquire()
-            # 获取群租
-            group: Group = self.server.groups_db.get(self.group_id)
-            group.send_msg(self.server, self.username, self.msg)
 
-            self.server.groups_db_lock.release()
+            self.server.groups_db_lock.acquire()
+            try:
+                # 获取群租
+                group: Group = self.server.groups_db.get(self.group_id)
+                if self.username in group.ban_dict:
+                    if group.ban_dict[self.username]['time'] < time.time():
+                        del group.ban_dict[self.username]
+                    else:
+                        return ReturnData(ReturnData.ERROR, 'you have been banned by admin')
+                group.send_msg(self.server, self.username, self.msg)
+            finally:
+                self.server.groups_db_lock.release()
