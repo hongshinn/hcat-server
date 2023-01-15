@@ -290,7 +290,18 @@ class GetGroupMembersList(Event):
 
             # 返回数据
             if self.username in group.member_list:
-                return ReturnData(ReturnData.OK).add('data', list(group.member_list))
+
+                return ReturnData(ReturnData.OK).add('data', {
+                    k: {
+                        'permission':
+                            (
+                                'member' if (k not in group.admin_list and k != group.owner) else
+                                'owner' if k == group.owner else
+                                'admin'
+                            )
+                    }
+                    for k in group.member_list})
+
             else:
                 return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')
         else:
