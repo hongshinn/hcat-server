@@ -489,7 +489,7 @@ class GroupRename(Event):
         if not group.permission_match(self.username):
             server.groups_db_lock.release()
             return ReturnData(ReturnData.ERROR, 'you do not have permission')
-
+        old_name=group.name
         # 重命名
         group.name = self.group_name
 
@@ -497,6 +497,20 @@ class GroupRename(Event):
         server.groups_db.set(self.group_id, group)
 
         server.groups_db_lock.release()
+
+        # 创建事件
+        ec = EventContainer(server.event_log_db, server.event_log_db_lock)
+        ec. \
+            add('type', 'group_rename'). \
+            add('rid', ec.rid). \
+            add('group_id', self.group_id). \
+            add('time', time.time()).\
+            add('old_name',old_name).\
+            add('new_name',group.name)
+        ec.write()
+
+        # 写入入群者的代办列表
+        [server.set_user_todo_list(m, ec) for m in group.member_list]
 
 
 class Leave(Event):
