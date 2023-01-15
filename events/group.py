@@ -489,7 +489,7 @@ class GroupRename(Event):
         if not group.permission_match(self.username):
             server.groups_db_lock.release()
             return ReturnData(ReturnData.ERROR, 'you do not have permission')
-        old_name=group.name
+        old_name = group.name
         # 重命名
         group.name = self.group_name
 
@@ -504,9 +504,9 @@ class GroupRename(Event):
             add('type', 'group_rename'). \
             add('rid', ec.rid). \
             add('group_id', self.group_id). \
-            add('time', time.time()).\
-            add('old_name',old_name).\
-            add('new_name',group.name)
+            add('time', time.time()). \
+            add('old_name', old_name). \
+            add('new_name', group.name)
         ec.write()
 
         # 写入入群者的代办列表
@@ -617,7 +617,11 @@ class Kick(Event):
         group: Group = server.groups_db.get(self.group_id)
 
         # 检查权限
-        if not group.permission_match(self.username) or (self.member_name in group and self.username != group.owner):
+        if (
+                not group.permission_match(self.username)) or (
+                self.member_name in group.admin_list and self.username != group.owner) or (
+                self.member_name == group.owner
+        ):
             server.groups_db_lock.release()
             return ReturnData(ReturnData.ERROR, 'you do not have permission')
 
