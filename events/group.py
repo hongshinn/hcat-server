@@ -656,3 +656,42 @@ class Kick(Event):
         # 写入入群者的代办列表
         server.set_user_todo_list(self.member_name, ec)
         return ReturnData(ReturnData.OK, '')
+
+
+class GetGroupAdminList(Event):
+    def __init__(self, server: HCatServer, req):
+        super().__init__()
+
+        self.server: HCatServer = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if not ins(['username', 'token', 'group_id'], req_data):
+            return ReturnData(ReturnData.ERROR, 'username token or group_id is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.group_id = req_data['group_id']
+
+    def _return(self):
+
+        # 验证用户名与token
+        auth_status, msg = self.server.authenticate_token(self.username, self.token)
+        if auth_status:
+            # 判断是否存在群聊
+            if not self.server.groups_db.exists(self.group_id):
+                return ReturnData(ReturnData.NULL, 'group not exists')
+
+            # 获取群租
+            group: Group = self.server.groups_db.get(self.group_id)
+
+            # 返回数据
+            if self.username in group.member_list:
+                return ReturnData(ReturnData.OK).add('data', [group.owner] + list(group.admin_list))
+            else:
+                return ReturnData(ReturnData.ERROR, 'you are not yet a member of this group')
+        else:
+            return msg
