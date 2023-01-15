@@ -464,6 +464,12 @@ class HCatServer:
             self.hcat(e)
             return e.e_return()
 
+        @self.app.route('/group/add_admin', methods=['POST', 'GET'])
+        def group_add_admin():
+            e = GroupAddAdmin(self, request)
+            self.hcat(e)
+            return e.e_return()
+
         @self.app.before_request
         def log_each_request():
             # log_output('Flask', text='{} {} {}'.format(request.remote_addr, request.method, request.path))
