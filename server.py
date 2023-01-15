@@ -435,7 +435,7 @@ class HCatServer:
             return e.e_return()
 
         @self.app.route('/group/kick', methods=['POST', 'GET'])
-        def groups_leave():
+        def groups_kick():
             e = Kick(self, request)
             self.hcat(e)
             return e.e_return()
