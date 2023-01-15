@@ -589,7 +589,74 @@ class Leave(Event):
         return ReturnData(ReturnData.OK, '')
 
 
-# todo:群转让
+# todo:设置管理员
+# todo:移除管理员
+class GroupTransferOwnership(Event):
+    def __init__(self, server: HCatServer, req):
+        super().__init__()
+
+        self.cancel = True
+        self.server: HCatServer = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if not ins(['username', 'token', 'group_id', 'new_owner_name'], req_data):
+            return ReturnData(ReturnData.ERROR, 'username token group_id or new_owner_name is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.group_id = req_data['group_id']
+        self.new_owner_name = req_data['new_owner_name']
+
+        # 验证用户名与token
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            self.cancel = False
+            return ReturnData(ReturnData.OK, '')
+        else:
+            return msg
+
+    def _return(self):
+        server = self.server
+
+        server.groups_db_lock.acquire()
+        try:
+            # 获取群聊
+            group: Group = server.groups_db.get(self.group_id)
+
+            # 检查权限
+            if self.username != group.owner:
+                return ReturnData(ReturnData.ERROR, 'you do not have permission')
+            old_name = group.name
+            # 更换群主
+            if self.new_owner_name in group.member_list:
+                group.owner = self.new_owner_name
+                group.admin_list.add(self.username)
+            else:
+                return ReturnData(ReturnData.NULL, 'member does not exist')
+
+            # 写入数据
+            server.groups_db.set(self.group_id, group)
+        finally:
+            server.groups_db_lock.release()
+
+        # 创建事件
+        ec = EventContainer(server.event_log_db, server.event_log_db_lock)
+        ec. \
+            add('type', 'owner_replaced'). \
+            add('rid', ec.rid). \
+            add('group_id', self.group_id). \
+            add('time', time.time()). \
+            add('old_owner', self.username). \
+            add('new_name', self.new_owner_name)
+        ec.write()
+
+        # 写入入群者的代办列表
+        [server.set_user_todo_list(m, ec) for m in group.member_list]
+
 
 class Kick(Event):
     def __init__(self, server: HCatServer, req):
