@@ -34,8 +34,7 @@ class Event:
                                                  'salt': util.get_random_token()})
                     self._init(server, req)
                 else:
-                    self.auth_data = json.dumps({'username': '', 'token': '',
-                                                 'salt': util.get_random_token()})
+                    self.auth_data = None
                     self.return_data = ReturnData(ReturnData.ERROR, 'token error')
 
     def _init(self, server, req):
@@ -52,16 +51,22 @@ class Event:
             self.auth_data = json.dumps(
                 {'username': self.username, 'token': self.token, 'salt': util.get_random_token()})
         else:
-            auth_data_json = json.loads(self.auth_data)
-            auth_data_json['salt'] = util.get_random_token()
-            self.auth_data = json.dumps(auth_data_json)
-        resp = Response(self.return_data.json_data)
-        aes = AESCrypto(util.get_pri_key())
-        resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
+            if self.auth_data is not None:
+                auth_data_json = json.loads(self.auth_data)
+                auth_data_json['salt'] = util.get_random_token()
+                self.auth_data = json.dumps(auth_data_json)
+            else:
+                return ReturnData(ReturnData.ERROR, 'token error')
+
 
         if not self.cancel:
             rt = self._return()
+            resp = Response(self.return_data.json_data)
+            aes = AESCrypto(util.get_pri_key())
+            resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
             if rt is not None:
                 return rt.json()
-
+        resp = Response(self.return_data.json_data)
+        aes = AESCrypto(util.get_pri_key())
+        resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
         return resp
