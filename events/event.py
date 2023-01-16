@@ -14,9 +14,8 @@ class Event:
         self.cancel = False
         self.return_data = ReturnData(ReturnData.NULL)
         if type(self).__name__ not in ['Login','Register']:
-            print(type(req))
             aes = AESCrypto(util.get_pri_key())
-            if type(req) is LocalProxy and 'auth_data' in req.cookies:
+            if type(req).__name__ == 'LocalProxy' and 'auth_data' in req.cookies:
                 print(1)
                 self.auth_data = aes.decrypto(req.cookies['auth_data'])
                 print(self.auth_data)
