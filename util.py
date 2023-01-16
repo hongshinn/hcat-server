@@ -28,7 +28,7 @@ def salted_hash(data, salt, additional_string=None):
 
 def request_parse(req_data):
     if req_data.method == 'POST':
-        data = req_data.form
+        data = dict(req_data.form)
     elif req_data.method == 'GET':
         data_dict = {}
         for i in req_data.args.items():
