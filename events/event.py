@@ -17,7 +17,7 @@ class Event:
         if type(self).__name__ != 'Login':
             print(1)
             aes = AESCrypto(util.get_pri_key())
-            if 'auth_data' in req.cookies:
+            if req is not None and 'auth_data' in req.cookies:
                 self.auth_data = aes.decrypto(req.cookies['auth_data'])
                 status, msg = server.authenticate_token(self.auth_data['username'], self.auth_data['self.token'])
                 if status:
