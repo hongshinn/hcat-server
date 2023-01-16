@@ -81,4 +81,4 @@ class AESCrypto:
 
     def decrypto(self, context=None):
         c_str = context if type(context) == str else str(context)
-        return str(AES.new(self.key, self.mode).decrypt(base64.b64decode(c_str)).rstrip(), encoding='utf8')
+        return str(AES.new(self.key, self.mode).decrypt(base64.b64decode(c_str)).rstrip(bytes([0])), encoding='utf8')
