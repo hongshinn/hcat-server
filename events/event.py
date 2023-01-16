@@ -35,10 +35,10 @@ class Event:
                 if ins(['username', 'token'], req_data):
                     self.auth_data = json.dumps({'username': req_data['username'], 'token': req_data['token'],
                                                  'salt': util.get_random_token()})
-                    self._init(server, req)
                 else:
                     self.auth_data = None
-                    self.return_data = ReturnData(ReturnData.ERROR, 'token error')
+                self._init(server, req)
+
         else:
             self._init(server, req)
 
