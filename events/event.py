@@ -1,6 +1,7 @@
 import json
 
 from flask import Response, request
+from werkzeug.local import LocalProxy
 
 import util
 from containers import ReturnData
@@ -17,7 +18,7 @@ class Event:
         if type(self).__name__ != 'Login':
             print(1)
             aes = AESCrypto(util.get_pri_key())
-            if req is not None and 'auth_data' in req.cookies:
+            if type(req) is LocalProxy and 'auth_data' in req.cookies:
 
                 self.auth_data = aes.decrypto(req.cookies['auth_data'])
                 auth_data_json = json.loads(self.auth_data)
