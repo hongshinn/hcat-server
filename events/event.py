@@ -15,10 +15,22 @@ class Event:
         self.cancel = False
         self.return_data = ReturnData(ReturnData.NULL)
         if type(self).__name__ != 'Login':
+            print(1)
             aes = AESCrypto(util.get_pri_key())
-            self.auth_data = aes.decrypto(request.cookies['auth_data'])
-            if server.authenticate_token(self.auth_data['username'], self.auth_data['self.token']):
-                self._init(server, req)
+            if 'auth_data' in req.cookies:
+                self.auth_data = aes.decrypto(req.cookies['auth_data'])
+                status, msg = server.authenticate_token(self.auth_data['username'], self.auth_data['self.token'])
+                if status:
+                    self._init(server, req)
+                else:
+                    self.return_data = msg
+            else:
+                print(2)
+                req_data = request_parse(request)
+                if ins(['username', 'token'], req_data):
+                    self._init(server, req)
+                else:
+                    self.return_data = ReturnData(ReturnData.ERROR, 'token error')
 
     def _init(self, server, req):
         ...
