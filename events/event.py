@@ -1,6 +1,6 @@
 import json
 
-from flask import Response, request
+from flask import Response, request, make_response
 from werkzeug.local import LocalProxy
 
 import util
@@ -61,12 +61,12 @@ class Event:
 
         if not self.cancel:
             rt = self._return()
-            resp = Response(self.return_data.json_data)
+            resp = make_response(self.return_data.json(), 200)
             aes = AESCrypto(util.get_pri_key())
             resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
             if rt is not None:
                 return rt.json()
-        resp = Response(self.return_data.json_data)
+        resp = make_response(self.return_data.json(), 200)
         aes = AESCrypto(util.get_pri_key())
         resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
         return resp
