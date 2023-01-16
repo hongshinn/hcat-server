@@ -7,8 +7,8 @@ from util import request_parse, ins
 
 
 class AddFriend(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -60,8 +60,8 @@ class AddFriend(Event):
 
 
 class AgreeFriendRequire(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server = server
@@ -154,8 +154,8 @@ class AgreeFriendRequire(Event):
 
 
 class DeleteFriend(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server = server
@@ -220,8 +220,8 @@ class DeleteFriend(Event):
 
 
 class GetFriendsList(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server = server
         self.return_data = self._run(server, req)

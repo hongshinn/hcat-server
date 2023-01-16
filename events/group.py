@@ -7,8 +7,8 @@ from util import *
 
 
 class CreateGroup(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
         self.server: HCatServer = server
         self.cancel = True
         self.return_data = self._run(server, req)
@@ -69,8 +69,8 @@ class CreateGroup(Event):
 
 
 class JoinGroup(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
         self.server: HCatServer = server
         self.cancel = True
         self.return_data = self._run(server, req)
@@ -183,8 +183,8 @@ class JoinGroup(Event):
 
 
 class AgreeJoinGroupRequest(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server: HCatServer = server
         self.cancel = True
@@ -261,8 +261,8 @@ class AgreeJoinGroupRequest(Event):
 
 
 class GetGroupMembersList(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -309,8 +309,8 @@ class GetGroupMembersList(Event):
 
 
 class GetGroupSettings(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -346,8 +346,8 @@ class GetGroupSettings(Event):
 
 
 class ChangeGroupSettings(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -406,8 +406,8 @@ class ChangeGroupSettings(Event):
 
 
 class GetGroupName(Event):
-    def __init__(self, server, group_id):
-        super().__init__()
+    def _init(self, server, group_id):
+        
         self.group_id = group_id
         self.server = server
         self.return_data = self._run(server)
@@ -428,8 +428,8 @@ class GetGroupName(Event):
 
 
 class GetGroupsList(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server = server
         self.return_data = self._run(server, req)
@@ -461,8 +461,8 @@ class GetGroupsList(Event):
 
 
 class GroupRename(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -525,8 +525,8 @@ class GroupRename(Event):
 
 
 class Leave(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -590,8 +590,8 @@ class Leave(Event):
 
 
 class GroupAddAdmin(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -656,8 +656,8 @@ class GroupAddAdmin(Event):
 
 # todo:移除管理员
 class GroupTransferOwnership(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -722,8 +722,8 @@ class GroupTransferOwnership(Event):
 
 
 class Kick(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -800,8 +800,8 @@ class Kick(Event):
 
 
 class GetGroupAdminList(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -839,8 +839,8 @@ class GetGroupAdminList(Event):
 
 
 class GetGroupOwner(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -878,8 +878,8 @@ class GetGroupOwner(Event):
 
 
 class Ban(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.cancel = True
         self.server: HCatServer = server

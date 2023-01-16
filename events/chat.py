@@ -7,8 +7,8 @@ from util import *
 
 
 class SendFriendMsg(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
 
         self.server = server
 
@@ -69,8 +69,8 @@ class SendFriendMsg(Event):
 
 
 class SendGroupMsg(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+        
         self.cancel = True
         self.server: HCatServer = server
         self.return_data = self._run(server, req)

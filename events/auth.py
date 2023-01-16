@@ -7,8 +7,7 @@ from util import *
 
 
 class AuthenticateToken(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
 
         self.server = server
         self.return_data = self._run(server, req)
@@ -33,8 +32,8 @@ class AuthenticateToken(Event):
 
 
 class GetDisplayName(Event):
-    def __init__(self, server, username):
-        super().__init__()
+    def _init(self, server, username):
+
         self.username = username
         self.server = server
         self.return_data = self._run(server)
@@ -47,7 +46,7 @@ class GetDisplayName(Event):
 
 
 class GetTodoList(Event):
-    def __init__(self, server: HCatServer, req):
+    def _init(self, server: HCatServer, req):
         super().__init__(req)
 
         self.server = server
@@ -94,8 +93,7 @@ class GetTodoList(Event):
 
 
 class Login(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
 
         self.cancel = True
         self.server = server
@@ -150,8 +148,8 @@ class Login(Event):
 
 
 class Logout(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
+
         self.server = server
         self.return_data = self._run(server, req)
 
@@ -192,8 +190,7 @@ class Logout(Event):
 
 
 class Register(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
 
         self.cancel = True
         self.server = server
@@ -239,8 +236,8 @@ class Register(Event):
 
 
 class Status(Event):
-    def __init__(self, server, username):
-        super().__init__()
+    def _init(self, server, username):
+
         self.username = username
         self.server = server
         self.return_data = self._run(server)
@@ -255,8 +252,7 @@ class Status(Event):
 
 
 class Rename(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
 
         self.cancel = True
         self.server = server
@@ -299,8 +295,7 @@ class Rename(Event):
 
 
 class ChangePassword(Event):
-    def __init__(self, server: HCatServer, req):
-        super().__init__()
+    def _init(self, server: HCatServer, req):
 
         self.cancel = True
         self.server = server

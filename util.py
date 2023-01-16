@@ -1,6 +1,11 @@
+import base64
 import hashlib
 import logging
+import os
+import platform
 import random
+
+from Crypto.Cipher import AES
 
 
 class FlaskLoggerFilter(logging.Filter):
@@ -52,3 +57,28 @@ def log_output(logger=__name__, log_level=logging.INFO, text=''):
     log = logging.getLogger(logger)
 
     log.log(log_level, text)
+
+
+def get_pri_key():
+    with open(os.path.join(os.getcwd(), 'pri.key'), 'r', encoding='utf8') as f:
+        return f.read()
+
+
+class AESCrypto:
+    def __init__(self, key, mode=None):
+        self.key = key
+        self.mode = mode if mode else AES.MODE_ECB
+
+    def encrypto(self, context=None):
+        if type(context) == bytes:
+            c_bytes = context
+        elif type(context) == str:
+            c_bytes = context.encode('utf8')
+        else:
+            c_bytes = bytes(context)
+        c_bytes += bytes([0] * (len(c_bytes) % 16))
+        return str(base64.b64encode(AES.new(self.key, self.mode).encrypt(c_bytes)), encoding='utf8')
+
+    def decrypto(self, context=None):
+        c_str = context if type(context) == str else str(context)
+        return str(AES.new(self.key, self.mode).decrypt(base64.b64decode(c_str)), encoding='utf8').strip()
