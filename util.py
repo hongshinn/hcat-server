@@ -76,7 +76,7 @@ class AESCrypto:
             c_bytes = context.encode('utf8')
         else:
             c_bytes = bytes(context)
-        c_bytes += bytes([0] * (len(c_bytes) % 16))
+        c_bytes += bytes([0] * (16 - len(c_bytes) % 16))
         return str(base64.b64encode(AES.new(self.key, self.mode).encrypt(c_bytes)), encoding='utf8')
 
     def decrypto(self, context=None):
