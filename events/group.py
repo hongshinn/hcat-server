@@ -8,7 +8,7 @@ from util import *
 
 class CreateGroup(Event):
     def _init(self, server: HCatServer, req):
-        
+
         self.server: HCatServer = server
         self.cancel = True
         self.return_data = self._run(server, req)
@@ -70,7 +70,7 @@ class CreateGroup(Event):
 
 class JoinGroup(Event):
     def _init(self, server: HCatServer, req):
-        
+
         self.server: HCatServer = server
         self.cancel = True
         self.return_data = self._run(server, req)
@@ -184,7 +184,6 @@ class JoinGroup(Event):
 
 class AgreeJoinGroupRequest(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.server: HCatServer = server
         self.cancel = True
@@ -262,7 +261,6 @@ class AgreeJoinGroupRequest(Event):
 
 class GetGroupMembersList(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -310,7 +308,6 @@ class GetGroupMembersList(Event):
 
 class GetGroupSettings(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -347,7 +344,6 @@ class GetGroupSettings(Event):
 
 class ChangeGroupSettings(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -407,7 +403,7 @@ class ChangeGroupSettings(Event):
 
 class GetGroupName(Event):
     def _init(self, server, group_id):
-        
+
         self.group_id = group_id
         self.server = server
         self.return_data = self._run(server)
@@ -429,7 +425,6 @@ class GetGroupName(Event):
 
 class GetGroupsList(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.server = server
         self.return_data = self._run(server, req)
@@ -462,7 +457,6 @@ class GetGroupsList(Event):
 
 class GroupRename(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -526,7 +520,6 @@ class GroupRename(Event):
 
 class Leave(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -591,7 +584,6 @@ class Leave(Event):
 
 class GroupAddAdmin(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -629,11 +621,14 @@ class GroupAddAdmin(Event):
             if self.username != group.owner:
                 return ReturnData(ReturnData.ERROR, 'you do not have permission')
 
-            # 更换群主
+            # 增加管理
             if self.member_name in group.member_list:
-                group.admin_list.add(self.member_name)
+                if self.member_name not in group.admin_list and self.username != group.owner:
+                    group.admin_list.add(self.member_name)
+                else:
+                    return ReturnData(ReturnData.ERROR, 'the member is already an admin')
             else:
-                return ReturnData(ReturnData.NULL, 'member does not exist')
+                return ReturnData(ReturnData.NULL, 'the member does not exist')
 
             # 写入数据
             server.groups_db.set(self.group_id, group)
@@ -654,10 +649,72 @@ class GroupAddAdmin(Event):
         [server.set_user_todo_list(m, ec) for m in group.member_list]
 
 
-# todo:移除管理员
+class GroupRemoveAdmin(Event):
+    def _init(self, server: HCatServer, req):
+
+        self.cancel = True
+        self.server: HCatServer = server
+        self.return_data = self._run(server, req)
+
+    def _run(self, server: HCatServer, request):
+        req_data = request_parse(request)
+        # 判断请求体是否为空
+        if not ins(['username', 'token', 'group_id', 'member_name'], req_data):
+            return ReturnData(ReturnData.ERROR, 'username token group_id or member_name is missing')
+
+        # 获取请求参数
+        self.username = req_data['username']
+        self.token = req_data['token']
+        self.group_id = req_data['group_id']
+        self.member_name = req_data['member_name']
+
+        # 验证用户名与token
+        auth_status, msg = server.authenticate_token(self.username, self.token)
+        if auth_status:
+            self.cancel = False
+            return ReturnData(ReturnData.OK, '')
+        else:
+            return msg
+
+    def _return(self):
+        server = self.server
+
+        server.groups_db_lock.acquire()
+        try:
+            # 获取群聊
+            group: Group = server.groups_db.get(self.group_id)
+
+            # 检查权限
+            if self.username != group.owner:
+                return ReturnData(ReturnData.ERROR, 'you do not have permission')
+
+            # 移除管理
+            if self.member_name in group.admin_list:
+                group.admin_list.pop(self.member_name)
+            else:
+                return ReturnData(ReturnData.NULL, 'the member are not yet administrator')
+
+            # 写入数据
+            server.groups_db.set(self.group_id, group)
+        finally:
+            server.groups_db_lock.release()
+
+        # 创建事件
+        ec = EventContainer(server.event_log_db, server.event_log_db_lock)
+        ec. \
+            add('type', 'admin_removed'). \
+            add('rid', ec.rid). \
+            add('group_id', self.group_id). \
+            add('time', time.time()). \
+            add('name', self.member_name)
+        ec.write()
+
+        # 写入入群者的代办列表
+        [server.set_user_todo_list(m, ec) for m in group.member_list]
+
+
 class GroupTransferOwnership(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -723,7 +780,6 @@ class GroupTransferOwnership(Event):
 
 class Kick(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.cancel = True
         self.server: HCatServer = server
@@ -801,7 +857,6 @@ class Kick(Event):
 
 class GetGroupAdminList(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -840,7 +895,6 @@ class GetGroupAdminList(Event):
 
 class GetGroupOwner(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.server: HCatServer = server
         self.return_data = self._run(server, req)
@@ -879,7 +933,6 @@ class GetGroupOwner(Event):
 
 class Ban(Event):
     def _init(self, server: HCatServer, req):
-        
 
         self.cancel = True
         self.server: HCatServer = server

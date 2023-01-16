@@ -1,4 +1,3 @@
-import platform
 import sys
 
 HCatServer = None
@@ -467,6 +466,12 @@ class HCatServer:
         @self.app.route('/group/add_admin', methods=['POST', 'GET'])
         def group_add_admin():
             e = GroupAddAdmin(self, request)
+            self.hcat(e)
+            return e.e_return()
+
+        @self.app.route('/group/remove_admin', methods=['POST', 'GET'])
+        def group_remove_admin():
+            e = GroupRemoveAdmin(self, request)
             self.hcat(e)
             return e.e_return()
 
