@@ -28,7 +28,10 @@ class Event:
                     self.return_data = msg
             else:
                 print(2)
-                req_data = request_parse(req)
+                try:
+                    req_data = request_parse(req)
+                except:
+                    req_data={}
                 if ins(['username', 'token'], req_data):
                     self.auth_data = json.dumps({'username': req_data['username'], 'token': req_data['token'],
                                                  'salt': util.get_random_token()})
