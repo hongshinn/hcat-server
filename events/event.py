@@ -19,6 +19,7 @@ class Event:
             if type(req) is LocalProxy and 'auth_data' in req.cookies:
 
                 self.auth_data = aes.decrypto(req.cookies['auth_data'])
+                print(self.auth_data)
                 auth_data_json = json.loads(self.auth_data)
                 status, msg = server.authenticate_token(auth_data_json['username'], auth_data_json['token'])
                 if status:
