@@ -48,7 +48,7 @@ class GetDisplayName(Event):
 
 class GetTodoList(Event):
     def __init__(self, server: HCatServer, req):
-        super().__init__()
+        super().__init__(req)
 
         self.server = server
         self.return_data = self._run(server, req)
