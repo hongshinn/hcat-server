@@ -20,7 +20,7 @@ class Event:
                 auth_data_json = json.loads(self.auth_data)
                 status, msg = server.authenticate_token(auth_data_json['username'], auth_data_json['token'])
                 if status:
-                    self._init(server, req)
+                    self._init(server, RData(req, auth_data_json['username'], auth_data_json['token']))
                 else:
                     self.return_data = msg
             else:
@@ -68,3 +68,11 @@ class Event:
             aes = AESCrypto(util.get_pri_key())
             resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
         return resp
+
+
+class RData:
+    def __init__(self, req, username, token):
+        self.method = 'GET'
+        self.form = util.request_parse(req)
+        self.form['username'] = username
+        self.form['token'] = token
