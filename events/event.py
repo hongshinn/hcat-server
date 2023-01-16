@@ -13,12 +13,10 @@ class Event:
     def __init__(self, server=None, req=None):
         self.cancel = False
         self.return_data = ReturnData(ReturnData.NULL)
-        if type(self).__name__ not in ['Login','Register']:
+        if type(self).__name__ not in ['Login', 'Register']:
             aes = AESCrypto(util.get_pri_key())
             if type(req).__name__ == 'LocalProxy' and 'auth_data' in req.cookies:
-                print(1)
                 self.auth_data = aes.decrypto(req.cookies['auth_data'])
-                print(self.auth_data)
                 auth_data_json = json.loads(self.auth_data)
                 status, msg = server.authenticate_token(auth_data_json['username'], auth_data_json['token'])
                 if status:
@@ -26,7 +24,6 @@ class Event:
                 else:
                     self.return_data = msg
             else:
-                print(2)
                 try:
                     req_data = request_parse(req)
                 except:
@@ -51,7 +48,6 @@ class Event:
         pass
 
     def e_return(self):
-        print('a')
         if type(self).__name__ == 'Login':
             self.auth_data = json.dumps(
                 {'username': self.username, 'token': self.token, 'salt': util.get_random_token()})
@@ -62,7 +58,6 @@ class Event:
                 auth_data_json = json.loads(self.auth_data)
                 auth_data_json['salt'] = util.get_random_token()
                 self.auth_data = json.dumps(auth_data_json)
-
 
         if not self.cancel:
             rt = self._return()
