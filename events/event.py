@@ -11,8 +11,6 @@ from util import *
 
 class Event:
     def __init__(self, server=None, req=None):
-        if req is not None:
-            print(req.cookies.get("test"))
         self.cancel = False
         self.return_data = ReturnData(ReturnData.NULL)
         if type(self).__name__ != 'Login':
