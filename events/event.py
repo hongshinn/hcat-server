@@ -13,7 +13,7 @@ class Event:
     def __init__(self, server=None, req=None):
         self.cancel = False
         self.return_data = ReturnData(ReturnData.NULL)
-        if type(self).__name__ != 'Login':
+        if type(self).__name__ not in ['Login','Register']:
             print(1)
             aes = AESCrypto(util.get_pri_key())
             if type(req) is LocalProxy and 'auth_data' in req.cookies:
@@ -31,7 +31,7 @@ class Event:
                 try:
                     req_data = request_parse(req)
                 except:
-                    req_data={}
+                    req_data = {}
                 if ins(['username', 'token'], req_data):
                     self.auth_data = json.dumps({'username': req_data['username'], 'token': req_data['token'],
                                                  'salt': util.get_random_token()})
@@ -41,6 +41,7 @@ class Event:
                     self.return_data = ReturnData(ReturnData.ERROR, 'token error')
         else:
             self._init(server, req)
+
     def _init(self, server, req):
         ...
 
@@ -51,26 +52,26 @@ class Event:
         pass
 
     def e_return(self):
+        print('a')
         if type(self).__name__ == 'Login':
             self.auth_data = json.dumps(
                 {'username': self.username, 'token': self.token, 'salt': util.get_random_token()})
+        elif type(self).__name__ == 'Register':
+            self.auth_data = None
         else:
             if self.auth_data is not None:
                 auth_data_json = json.loads(self.auth_data)
                 auth_data_json['salt'] = util.get_random_token()
                 self.auth_data = json.dumps(auth_data_json)
             else:
-                return ReturnData(ReturnData.ERROR, 'token error')
-
+                return ReturnData(ReturnData.ERROR, 'token error').json()
 
         if not self.cancel:
             rt = self._return()
-            resp = make_response(self.return_data.json(), 200)
+            if rt is not None:
+                self.return_data = rt
+        resp = make_response(self.return_data.json(), 200)
+        if self.auth_data is not None:
             aes = AESCrypto(util.get_pri_key())
             resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
-            if rt is not None:
-                return rt.json()
-        resp = make_response(self.return_data.json(), 200)
-        aes = AESCrypto(util.get_pri_key())
-        resp.set_cookie('auth_data', aes.encrypto(self.auth_data))
         return resp
