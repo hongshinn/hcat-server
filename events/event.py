@@ -1,3 +1,5 @@
+from flask import Response
+
 from containers import ReturnData
 
 
@@ -18,4 +20,6 @@ class Event:
 
             if rt is not None:
                 return rt.json()
-        return self.return_data.json()
+        resp = Response(self.return_data.json_data)
+        resp.set_cookie('test', 'test')
+        return resp
