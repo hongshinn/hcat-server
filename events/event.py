@@ -72,7 +72,7 @@ class Event:
 
 class RData:
     def __init__(self, req, username, token):
-        self.method = 'GET'
+        self.method = 'POST'
         self.form = util.request_parse(req)
         self.form['username'] = username
         self.form['token'] = token
