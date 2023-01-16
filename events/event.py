@@ -63,8 +63,7 @@ class Event:
                 auth_data_json = json.loads(self.auth_data)
                 auth_data_json['salt'] = util.get_random_token()
                 self.auth_data = json.dumps(auth_data_json)
-            else:
-                return ReturnData(ReturnData.ERROR, 'token error').json()
+
 
         if not self.cancel:
             rt = self._return()
