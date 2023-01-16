@@ -28,8 +28,12 @@ class Event:
                 print(2)
                 req_data = request_parse(request)
                 if ins(['username', 'token'], req_data):
+                    self.auth_data = {'username': req_data['username'], 'token': req_data['token'],
+                                      'salt': util.get_random_token()}
                     self._init(server, req)
                 else:
+                    self.auth_data = {'username': '', 'token': '',
+                                      'salt': util.get_random_token()}
                     self.return_data = ReturnData(ReturnData.ERROR, 'token error')
 
     def _init(self, server, req):
