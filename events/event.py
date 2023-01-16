@@ -1,10 +1,13 @@
-from flask import Response
+from flask import Response, request
 
 from containers import ReturnData
+from typing import Optional
 
 
 class Event:
-    def __init__(self):
+    def __init__(self, req=None):
+        if req is not None:
+            print(req.cookies.get("test"))
         self.cancel = False
         self.return_data = ReturnData(ReturnData.NULL)
 

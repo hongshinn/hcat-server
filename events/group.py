@@ -588,6 +588,7 @@ class Leave(Event):
         server.data_db_lock.release()
         return ReturnData(ReturnData.OK, '')
 
+
 class GroupAddAdmin(Event):
     def __init__(self, server: HCatServer, req):
         super().__init__()
@@ -651,6 +652,8 @@ class GroupAddAdmin(Event):
 
         # 写入入群者的代办列表
         [server.set_user_todo_list(m, ec) for m in group.member_list]
+
+
 # todo:移除管理员
 class GroupTransferOwnership(Event):
     def __init__(self, server: HCatServer, req):
