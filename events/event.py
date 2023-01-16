@@ -36,7 +36,8 @@ class Event:
                 else:
                     self.auth_data = None
                     self.return_data = ReturnData(ReturnData.ERROR, 'token error')
-
+        else:
+            self._init(server, req)
     def _init(self, server, req):
         ...
 
