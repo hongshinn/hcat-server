@@ -475,6 +475,12 @@ class HCatServer:
             self.hcat(e)
             return e.e_return()
 
+        @self.app.route('/group/get_permission', methods=['POST', 'GET'])
+        def group_get_permission():
+            e = GetPermission(self, request)
+            self.hcat(e)
+            return e.e_return()
+
         @self.app.before_request
         def log_each_request():
             # log_output('Flask', text='{} {} {}'.format(request.remote_addr, request.method, request.path))
