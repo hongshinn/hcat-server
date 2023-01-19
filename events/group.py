@@ -667,7 +667,6 @@ class GroupRemoveAdmin(Event):
         self.token = req_data['token']
         self.group_id = req_data['group_id']
         self.member_name = req_data['member_name']
-
         # 验证用户名与token
         auth_status, msg = server.authenticate_token(self.username, self.token)
         if auth_status:
@@ -690,7 +689,7 @@ class GroupRemoveAdmin(Event):
 
             # 移除管理
             if self.member_name in group.admin_list:
-                group.admin_list.pop(self.member_name)
+                group.admin_list.remove(self.member_name)
             else:
                 return ReturnData(ReturnData.NULL, 'the member are not yet administrator')
 
