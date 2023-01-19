@@ -375,7 +375,7 @@ class ChangeGroupSettings(Event):
             group: Group = server.groups_db.get(self.group_id)
 
             # 返回数据
-            if self.username in group.admin_list and self.username != group.owner:
+            if self.username in group.admin_list or self.username == group.owner:
                 self.cancel = False
                 return ReturnData(ReturnData.OK)
             else:
