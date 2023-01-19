@@ -623,7 +623,7 @@ class GroupAddAdmin(Event):
 
             # 增加管理
             if self.member_name in group.member_list:
-                if self.member_name not in group.admin_list and self.username != group.owner:
+                if self.member_name not in group.admin_list and self.member_name != group.owner:
                     group.admin_list.add(self.member_name)
                 else:
                     return ReturnData(ReturnData.ERROR, 'the member is already an admin')
